@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+  <meta property="og:title" content="">
+  <meta property="og:description" content="">
+  <meta property="og:image" content="">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#C9A96E">
+  <title>Your Brand</title>
+  <link rel="icon" type="image/png" href="">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ Navigation ============ -->
+  <nav class="nav nav-white" id="navbar">
+    <div class="nav-inner">
+      <a href="#home" class="nav-logo" id="navLogo"></a>
+      <div style="display:flex;align-items:center;">
+        <ul class="nav-links" id="navLinks"></ul>
+        <!-- Language Switcher -->
+        <div class="lang-switcher" id="langSwitcher">
+          <div class="lang-current" id="langCurrent">
+            <span id="langFlag">🌐</span><span id="langLabel">EN</span><span class="arrow">▾</span>
+          </div>
+          <div class="lang-dropdown" id="langDropdown"></div>
+        </div>
+      </div>
+      <div class="nav-toggle" id="navToggle">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+    <div class="nav-mobile" id="navMobile"></div>
+  </nav>
+
+  <!-- ============ Floating WhatsApp ============ -->
+  <a class="float-wa" id="floatWA" href="#" target="_blank" rel="noopener noreferrer" title="WhatsApp" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+  </a>
+
+  <!-- ============ Hero ============ -->
+  <section class="hero" id="home">
+    <div class="hero-fallback" id="heroFallback"></div>
+    <div class="hero-content">
+      <h1 class="hero-title" id="heroTitle">Your Brand</h1>
+      <p class="hero-subtitle" id="heroSubtitle">Everyday Elegance</p>
+      <a class="hero-cta" id="heroCta" href="#products">探索产品</a>
+    </div>
+    <div class="hero-scroll" aria-hidden="true">⌄</div>
+  </section>
+
+  <!-- ============ Products ============ -->
+  <section class="products-section section-padding" id="products">
+    <div class="container">
+      <h2 class="section-title" id="productsTitle">Our Products</h2>
+      <div class="section-divider"></div>
+      <div class="filter-bar" id="filterBar"></div>
+      <div class="product-grid" id="productGrid"></div>
+      <div class="products-empty" id="productsEmpty" style="display:none;">No products yet. Stay tuned!</div>
+    </div>
+  </section>
+
+  <!-- ============ About ============ -->
+  <section class="about-section section-padding" id="about">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-image" id="aboutImage"></div>
+        <div class="about-text">
+          <h2 class="section-title" id="aboutTitle">About Us</h2>
+          <div class="section-divider"></div>
+          <div id="aboutContent"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Contact ============ -->
+  <section class="contact-section section-padding" id="contact">
+    <div class="container">
+      <h2 class="section-title">Contact Us</h2>
+      <div class="section-divider"></div>
+      <div class="contact-cards" id="contactCards"></div>
+      <a class="contact-website-btn" id="contactWebsiteBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;"></a>
+    </div>
+  </section>
+
+  <!-- ============ Footer ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="nav-logo" id="footerBrandName"></span>
+          <p id="footerSlogan"></p>
+        </div>
+        <div class="footer-links" id="footerLinks"></div>
+      </div>
+      <div class="footer-bottom">
+        <p id="footerCopyright">© 2025. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ QR Code Modal ============ -->
+  <div class="modal-overlay" id="qrModal">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <h3 id="modalTitle">扫描二维码</h3>
+      <p id="modalHint"></p>
+      <div id="modalQrContainer"></div>
+      <div id="modalAction"></div>
+    </div>
+  </div>
+
+  <!-- ============ Config ============ -->
+  <script src="config.live.js"></script>
+
+  <!-- ============ I18N Translations ============ -->
+  <script src="js/i18n.js"></script>
+
+  <!-- ============ App Logic ============ -->
+  <script src="js/main.js"></script>
+</body>
+</html>

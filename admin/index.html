@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="robots" content="noindex">
+<title>管理后台 — Site Admin</title>
+<style>
+/* ========== 基础变量 ========== */
+:root{--primary:#C9A96E;--primary-dark:#B08D4A;--bg:#F8F6F3;--white:#FFF;--text:#2D2D2D;--text-light:#888;--border:#E5E0D8;--danger:#E74C3C;--success:#27AE60;--radius:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
+
+/* ========== 登录页 ========== */
+#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:40px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.login-box h1{font-size:22px;text-align:center;margin-bottom:4px}
+.login-box .sub{font-size:13px;color:#999;text-align:center;margin-bottom:28px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:14px;font-weight:500;margin-bottom:5px;color:#555}
+.fg .lh{font-size:11px;color:var(--primary);font-weight:600;margin-bottom:2px}
+.fi{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:15px;background:var(--white);-webkit-appearance:none}
+.fi:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(201,169,110,.15)}
+textarea.fi{resize:vertical;min-height:70px}
+.fr{display:flex;gap:12px}.fr .fg{flex:1}
+.cr{display:flex;gap:8px;align-items:center}
+.cr input[type=color]{width:36px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px}
+.chk{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.chk input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary)}
+.btn{display:inline-block;padding:10px 20px;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:500;transition:.15s;text-decoration:none;touch-action:manipulation}
+.btn-p{background:var(--primary);color:#FFF}.btn-p:hover{background:var(--primary-dark)}
+.btn-d{background:var(--danger);color:#FFF}.btn-s{background:var(--success);color:#FFF}
+.btn-o{background:white;border:1px solid var(--border);color:var(--text)}.btn-o:hover{border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-block{display:block;width:100%;text-align:center}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-login{width:100%;padding:12px;background:var(--primary);color:#FFF;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px}
+.btn-login:hover{background:var(--primary-dark)}
+.alert{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:14px;display:none}
+.alert.show{display:block;animation:fadeIn .3s}
+.alert-e{background:#FDECEA;color:var(--danger);border:1px solid #FADBD8}
+.alert-s{background:#E8F8F5;color:var(--success);border:1px solid #D5F5E3}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ========== Toast 浮动提示 ========== */
+#toastContainer{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#FFF;box-shadow:0 6px 24px rgba(0,0,0,.15);animation:toastIn .35s ease;max-width:340px;line-height:1.4}
+.toast-success{background:linear-gradient(135deg,#27AE60,#2ECC71)}
+.toast-error{background:linear-gradient(135deg,#E74C3C,#EC7063)}
+.toast-info{background:linear-gradient(135deg,#3498DB,#5DADE2)}
+@keyframes toastIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
+
+/* ========== 图片上传组件 ========== */
+.img-upload-wrap{display:flex;align-items:center;gap:8px}
+.img-upload-wrap .fi{flex:1}
+.img-up-btn{display:inline-flex;align-items:center;gap:4px;padding:9px 14px;background:#F5F0EB;border:1px dashed #C9A96E;border-radius:6px;color:var(--primary-dark);font-size:13px;font-weight:500;cursor:pointer;transition:.15s;white-space:nowrap;flex-shrink:0}
+.img-up-btn:hover{background:#EDE5DA}
+.img-up-btn input{display:none}
+.img-preview{margin-top:6px;display:none}
+.img-preview.show{display:block}
+.img-preview img{max-width:120px;max-height:80px;border-radius:6px;border:1px solid var(--border);object-fit:cover}
+.img-preview .img-rm{display:inline-block;margin-left:8px;font-size:12px;color:var(--danger);cursor:pointer;text-decoration:none}
+
+/* ========== 桌面布局 ========== */
+#app{display:none;min-height:100vh}
+.topbar{display:none;position:fixed;top:0;left:0;right:0;z-index:200;background:#1E1E1E;color:#FFF;padding:12px 16px;align-items:center;justify-content:space-between}
+.topbar .tb-logo{font-size:16px;font-weight:700;color:var(--primary)}
+.topbar .tb-menu{background:none;border:none;color:#FFF;font-size:24px;cursor:pointer;padding:4px 8px;line-height:1}
+.sidebar{width:220px;background:#1E1E1E;color:#CCC;position:fixed;top:0;left:0;bottom:0;z-index:100;display:flex;flex-direction:column;transition:transform .25s}
+.sidebar-logo{padding:24px 20px 16px;font-size:18px;font-weight:700;color:var(--primary);border-bottom:1px solid #333}
+.sidebar-info{padding:10px 20px;font-size:12px;color:#888;border-bottom:1px solid #333}
+.sidebar-info .role{color:var(--primary);font-size:11px;margin-top:2px}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.sidebar-nav a{display:block;padding:12px 20px;color:#AAA;text-decoration:none;font-size:14px;border-left:3px solid transparent;cursor:pointer;transition:.15s}
+.sidebar-nav a:hover,.sidebar-nav a.active{color:#FFF;background:#2A2A2A;border-left-color:var(--primary)}
+.sidebar-nav .sec{padding:12px 20px 4px;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:2px}
+.sidebar-footer{padding:16px 20px;border-top:1px solid #333}
+.sidebar-footer a{color:#888;font-size:13px;text-decoration:none;cursor:pointer}
+.sidebar-footer a:hover{color:#FFF}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+.main{margin-left:220px;flex:1;padding:28px 36px;max-width:960px}
+.page-title{font-size:22px;font-weight:600;margin-bottom:20px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:18px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.tag-admin{background:#FDEBD0;color:#B9770E}.tag-editor{background:#D5F5E3;color:#1E8449}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:700;color:var(--primary)}
+.stat-card .lbl{font-size:12px;color:var(--text-light);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);font-weight:600;color:#555;font-size:11px;text-transform:uppercase}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:#FAFAFA}
+.empty{text-align:center;padding:32px;color:var(--text-light)}
+.status{margin-top:14px;font-size:13px;line-height:1.6}
+.s-e{color:var(--danger)}.s-s{color:var(--success)}.s-w{color:#E67E22}
+.depoly-actions{display:flex;flex-wrap:wrap;gap:10px}
+
+/* ========== 仪表盘专用样式 ========== */
+.dash-welcome{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#FFF;border-radius:12px;padding:28px 30px;margin-bottom:20px;position:relative;overflow:hidden}
+.dash-welcome::after{content:'';position:absolute;top:-30px;right:-20px;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:50%}
+.dash-welcome h2{font-size:22px;margin-bottom:6px}
+.dash-welcome p{font-size:13px;opacity:.85}
+.dash-welcome .site-link{display:inline-block;margin-top:10px;padding:6px 16px;background:rgba(255,255,255,.2);border-radius:20px;color:#FFF;font-size:12px;text-decoration:none;transition:.15s}
+.dash-welcome .site-link:hover{background:rgba(255,255,255,.3)}
+
+.guide-steps{counter-reset:step}
+.guide-step{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--border);counter-increment:step}
+.guide-step:last-child{border-bottom:none}
+.guide-num{flex-shrink:0;width:32px;height:32px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#FFF;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.guide-num::before{content:counter(step)}
+.guide-body{flex:1}
+.guide-body .gt{font-size:14px;font-weight:600;margin-bottom:2px}
+.guide-body .gd{font-size:12px;color:var(--text-light);line-height:1.5}
+.guide-body .gb{display:inline-block;margin-top:6px;padding:4px 12px;background:var(--primary);color:#FFF;border-radius:4px;font-size:12px;text-decoration:none;cursor:pointer;transition:.15s}
+.guide-body .gb:hover{background:var(--primary-dark)}
+
+.progress-bar{height:8px;background:#EEE;border-radius:4px;overflow:hidden;margin:8px 0 4px}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--primary),var(--primary-dark));transition:width .5s ease}
+
+.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.quick-item{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#FAFAFA;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:.15s;text-decoration:none;color:var(--text)}
+.quick-item:hover{border-color:var(--primary);background:#FDFBF7}
+.quick-item .qi-icon{font-size:24px;flex-shrink:0}
+.quick-item .qi-text{font-size:13px;font-weight:500}
+.quick-item .qi-sub{font-size:11px;color:var(--text-light)}
+
+/* ========== 移动端适配 (<768px) ========== */
+@media(max-width:768px){
+  .login-box{padding:28px 20px}
+  .topbar{display:flex}
+  .sidebar{transform:translateX(-100%);width:260px;padding-top:52px;z-index:150}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.show{display:block}
+  .sidebar-logo{display:none}
+  .main{margin-left:0;padding:60px 16px 24px;max-width:100%}
+  .main .card{padding:16px;margin-bottom:12px}
+  .page-title{font-size:18px;margin-bottom:14px}
+  .fr{flex-direction:column;gap:0}
+  .stats{grid-template-columns:1fr;gap:10px}
+  .stat-card{padding:14px}
+  .stat-card .num{font-size:22px}
+  .fi{font-size:16px;padding:11px 12px}
+  .btn{padding:12px 20px;font-size:15px}
+  .btn-sm{padding:7px 14px;font-size:13px}
+  .depoly-actions .btn{width:100%}
+  th,td{font-size:12px;padding:6px 8px}
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  select.fi{font-size:16px}
+  #toastContainer{top:auto;bottom:16px;right:16px;left:16px}
+  .toast{max-width:100%}
+  .dash-welcome{padding:20px}
+  .dash-welcome h2{font-size:18px}
+  .quick-grid{grid-template-columns:1fr}
+  .img-upload-wrap{flex-direction:column;align-items:stretch}
+  .img-up-btn{justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Toast 容器 ===== -->
+<div id="toastContainer"></div>
+
+<!-- ===== 登录页 ===== -->
+<div id="loginPage">
+  <div class="login-box">
+    <h1>⚡ 管理后台</h1>
+    <p class="sub">营销网站配置 & 一键部署</p>
+    <div class="alert" id="loginAlert"></div>
+    <div class="fg"><label>用户名</label><input type="text" id="loginUser" class="fi" placeholder="输入用户名" autofocus autocomplete="username"></div>
+    <div class="fg"><label>密码</label><input type="password" id="loginPass" class="fi" placeholder="输入密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">登 录</button>
+    <p style="text-align:center;font-size:12px;color:#BBB;margin-top:16px">默认: admin / admin123</p>
+  </div>
+</div>
+
+<!-- ===== 主应用 ===== -->
+<div id="app">
+  <!-- 移动端顶栏 -->
+  <div class="topbar" id="topbar">
+    <button class="tb-menu" onclick="toggleSidebar()" aria-label="菜单">☰</button>
+    <span class="tb-logo">⚡ Site Admin</span>
+    <span style="font-size:12px;color:#888" id="tbUser"></span>
+  </div>
+
+  <!-- 遮罩 -->
+  <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- 侧边栏 -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">⚡ Site Admin</div>
+    <div class="sidebar-info"><span id="sUser"></span><div class="role" id="sRole"></div></div>
+    <div class="sidebar-nav">
+      <a class="active" data-page="dashboard">📊 仪表盘</a>
+      <div class="sec">内容配置</div>
+      <a data-page="brand">🏷️ 品牌设置</a>
+      <a data-page="products">🛍️ 产品管理</a>
+      <a data-page="pages">📄 页面内容</a>
+      <a data-page="contact">📞 联系方式</a>
+      <div class="sec">发布</div>
+      <a data-page="deploy">🚀 生成 & 部署</a>
+      <div class="sec" id="adminSec" style="display:none">管理</div>
+      <a data-page="users" id="navUsers" style="display:none">👥 用户管理</a>
+    </div>
+    <div class="sidebar-footer"><a onclick="doLogout()">退出登录 →</a></div>
+  </nav>
+
+  <main class="main">
+    <div class="alert" id="mainAlert"></div>
+    <div id="pageContainer"></div>
+  </main>
+</div>
+
+<script>
+// =================== 全局函数 ===================
+async function sha256(m){const e=new TextEncoder().encode(m);const h=await crypto.subtle.digest('SHA-256',e);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+function $(id){return document.getElementById(id)}
+function qsa(sel){return document.querySelectorAll(sel)}
+function showAlert(elId, msg, type){const e=$(elId);e.textContent=msg;e.className='alert alert-'+type+' show';setTimeout(()=>e.classList.remove('show'),4000)}
+
+// =================== Toast 浮动提示 ===================
+function toast(msg,type){type=type||'success';
+  const c=$('toastContainer');
+  const el=document.createElement('div');
+  el.className='toast toast-'+type;
+  const icon={success:'✅',error:'❌',info:'ℹ️'}[type]||'✅';
+  el.innerHTML=`<span>${icon}</span> ${msg}`;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.animation='toastOut .3s ease forwards';setTimeout(()=>el.remove(),300)},2500);
+}
+
+// =================== 移动端侧边栏 ===================
+function toggleSidebar(){
+  const sb=$('sidebar'),ov=$('overlay');
+  sb.classList.toggle('open');ov.classList.toggle('show');
+}
+function closeSidebar(){
+  $('sidebar').classList.remove('open');$('overlay').classList.remove('show');
+}
+
+// =================== 配置 ===================
+const DEFAULT_CONFIG={
+  i18n:{defaultLanguage:"en",languages:["en","zh"]},
+  brand:{name:{en:"Your Brand",zh:"您的品牌"},slogan:{en:"Everyday Elegance",zh:"优雅每一天"},logo:"",primaryColor:"#C9A96E",secondaryColor:"#2D2D2D",bgColor:"#FFFFFF",accentBg:"#FAF8F5"},
+  navigation:[{id:"home",label:{en:"Home",zh:"首页"},href:"#home"},{id:"products",label:{en:"Products",zh:"产品"},href:"#products"},{id:"about",label:{en:"About",zh:"关于"},href:"#about"},{id:"contact",label:{en:"Contact",zh:"联系"},href:"#contact"}],
+  hero:{image:"",title:{en:"Your Brand",zh:"您的品牌"},subtitle:{en:"Everyday Elegance",zh:"优雅每一天"},ctaText:{en:"Explore Collection",zh:"探索产品"},ctaLink:"#products"},
+  productsMeta:{title:{en:"Our Products",zh:"我们的产品"}},
+  productCategories:[{en:"All",zh:"全部"},{en:"New Arrivals",zh:"新品上市"},{en:"Best Sellers",zh:"热销推荐"},{en:"Classic",zh:"经典系列"}],
+  products:[{name:{en:"Freshwater Pearl Necklace",zh:"淡水珍珠项链"},category:{en:"Best Sellers",zh:"热销推荐"},price:"$29.00",image:"",description:{en:"Elegant freshwater pearls.",zh:"优雅淡水珍珠"}}],
+  about:{image:"",title:{en:"About Us",zh:"关于我们"},paragraphs:[{en:"Our brand was born from a passion for beauty.",zh:"我们的品牌始于对美的追求。"},{en:"Every piece is carefully selected.",zh:"每一件产品都经过精心挑选。"}]},
+  contact:{title:{en:"Contact Us",zh:"联系我们"},wechat:{enabled:true,qrImage:"",label:{en:"WeChat",zh:"微信咨询"},hint:{en:"Scan to add on WeChat",zh:"扫描二维码添加微信好友"},modalTitle:{en:"Add on WeChat",zh:"添加微信"},modalHint:{en:"Scan the QR code with WeChat",zh:"请使用微信扫描下方二维码"}},whatsapp:{enabled:true,phone:"8613800138000",message:{en:"Hello!",zh:"你好！"},qrImage:"",label:{en:"WhatsApp",zh:"WhatsApp 联系"},hint:{en:"Chat on WhatsApp",zh:"点击通过 WhatsApp 联系我们"},modalTitle:{en:"WhatsApp",zh:"WhatsApp 联系"},modalHint:{en:"Scan or click",zh:"扫描或点击聊天"}},website:{enabled:false,url:"",label:{en:"Visit Website",zh:"访问官方网站"},openNewTab:true},email:{enabled:false,address:"",label:{en:"Send Email",zh:"发送邮件"}},siteQR:{enabled:false,url:"",label:{en:"Scan to Visit",zh:"扫码访问"},hint:{en:"QR to site",zh:"扫码打开网站"},showOnPage:true,qrImage:""}},
+  seo:{title:{en:"Your Brand | Jewelry",zh:"您的品牌 | 珠宝"},description:{en:"Discover handcrafted jewelry.",zh:"发现手工珠宝。"},keywords:"jewelry, accessories",ogImage:"",favicon:""},
+  advanced:{gaTrackingId:"",showFloatingWhatsApp:true}
+};
+
+const DEFAULT_USERS={admin:{username:"admin",password:"bd04502e85c0a9125c700bd88fff42aaf315a90f97b21848c13f3a7f0e93cb33",role:"admin"}};
+const SALT="qrcode-landing-2026";
+
+// =================== 状态 ===================
+let currentUser=null,currentConfig=null,currentUsers=null;
+let deployRepo="",deployBranch="gh-pages",deployToken="",imgbbKey="";
+let siteConfig=null;
+
+// =================== 工具 ===================
+function i18nGet(val,lang){return val&&typeof val==='object'?(val[lang]||val['en']||''):(val||'')}
+function i18nSet(existing,lang,value){if(typeof existing==='object'&&existing!==null){existing[lang]=value;return existing}const o={};o[lang]=value;return o}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// =================== 图片上传工具 ===================
+function imgField(id,label,val){
+  const isUrl=val&&(val.startsWith('http')||val.startsWith('data:'));
+  return `<div class="img-upload-wrap"><input class="fi" id="${id}" value="${esc(val||'')}" placeholder="${label}" onchange="onImgChange('${id}')"><label class="img-up-btn">📷 上传<input type="file" accept="image/*" onchange="handleUpload(this,'${id}')"></label></div><div class="img-preview${isUrl?' show':''}" id="${id}_preview">${isUrl?('<img src="'+esc(val)+'" alt="preview"><a class="img-rm" onclick="clearImg(\''+id+'\')">移除</a>'):''}</div>`;
+}
+function handleUpload(inp,targetId){
+  const f=inp.files[0];if(!f)return;
+  var preview=$(targetId+'_preview');
+  // 显示上传中状态
+  preview.innerHTML='<div style="text-align:center;padding:12px;color:var(--primary)"><span>⏳ 正在上传...</span><br><span id="'+targetId+'_prog" style="font-size:11px;color:#888"></span></div>';
+  preview.classList.add('show');
+  if(imgbbKey){
+    // 方式1：上传到 ImgBB CDN（推荐，支持高清大图）
+    var form=new FormData();
+    form.append('image',f);
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST','https://api.imgbb.com/1/image?key='+imgbbKey);
+    xhr.upload.addEventListener('progress',function(e){
+      if(e.lengthComputable){
+        var pct=Math.round(e.loaded/e.total*100);
+        var pg=$(targetId+'_prog');
+        if(pg)pg.textContent='上传中... '+pct+'%';
+      }
+    });
+    xhr.addEventListener('load',function(){
+      if(xhr.status===200){
+        try{
+          var d=JSON.parse(xhr.responseText);
+          if(d&&d.data&&d.data.url){
+            $(targetId).value=d.data.url;
+            preview.innerHTML='<img src="'+esc(d.data.url)+'" alt="preview"><a class="img-rm" href="javascript:void(0)" onclick="clearImg(\''+targetId+'\')">移除</a>';
+            toast('✅ 图片已上传至图床','success');
+          }else{toast('❌ ImgBB返回数据格式错误','error');preview.innerHTML='';preview.classList.remove('show');}
+        }catch(e){toast('❌ 解析ImgBB响应失败','error');preview.innerHTML='';preview.classList.remove('show');}
+      }else{
+        var errMsg='上传失败';
+        try{var rd=JSON.parse(xhr.responseText);if(rd&&rd.error)errMsg=rd.error.message||rd.error;if(typeof rd==='string'&&rd.includes('error'))errMsg=rd;}catch(e2){}
+        toast('❌ ImgBB上传失败: '+errMsg,'error');
+        preview.innerHTML='';preview.classList.remove('show');
+      }
+    });
+    xhr.addEventListener('error',function(){toast('❌ 网络错误，请检查网络连接','error');preview.innerHTML='';preview.classList.remove('show');});
+    xhr.send(form);
+  }else{
+    // 方式2：无ImgBB Key时，使用本地base64（限制200KB）
+    if(f.size>200*1024){
+      toast('⚠️ 未配置ImgBB Key，大图建议先压缩到200KB以下，或在部署设置中添加ImgBB Key','error',5000);
+    }
+    if(f.size>5*1024*1024){
+      toast('❌ 图片超过5MB且无ImgBB Key，无法上传','error');preview.innerHTML='';preview.classList.remove('show');return;
+    }
+    var r=new FileReader();
+    r.onload=function(){
+      var d=r.result;
+      if(d.length>5*1024*1024){
+        toast('❌ 图片太大！请使用ImgBB Key上传高清图片（单张最大32MB）','error');preview.innerHTML='';preview.classList.remove('show');return;
+      }
+      $(targetId).value=d;
+      preview.innerHTML='<img src="'+esc(d)+'" alt="preview"><a class="img-rm" href="javascript:void(0)" onclick="clearImg(\''+targetId+'\')">移除</a>';
+      toast('✅ 图片已保存（本地模式，建议配置ImgBB Key）','info');
+    };
+    r.readAsDataURL(f);
+  }
+}
+function onImgChange(id){
+  // 手动粘贴URL时，实时更新预览
+  var val=$(id).value.trim();
+  var preview=$(id+'_preview');
+  if(val&&(val.startsWith('http')||val.startsWith('data:'))){
+    preview.innerHTML='<img src="'+esc(val)+'" alt="preview"><a class="img-rm" href="javascript:void(0)" onclick="clearImg(\''+id+'\')">移除</a>';
+    preview.classList.add('show');
+  }else{
+    preview.innerHTML='';preview.classList.remove('show');
+  }
+}
+function clearImg(id){$(id).value='';const p=$(id+'_preview');p.innerHTML='';p.classList.remove('show')}
+
+// =================== 存储 ===================
+function saveLocal(k,v){try{localStorage.setItem('qrc_'+k,JSON.stringify(v))}catch(e){}}
+function loadLocal(k){try{const v=localStorage.getItem('qrc_'+k);return v?JSON.parse(v):null}catch(e){return null}}
+
+// =================== 登录系统 ===================
+async function doLogin(){
+  const btn=$('loginBtn');const origText=btn.textContent;
+  btn.disabled=true;btn.textContent='登 录 中...';btn.style.opacity='0.6';
+  try{
+    const u=$('loginUser').value.trim(),p=$('loginPass').value;
+    if(!u||!p){showAlert('loginAlert','请输入用户名和密码','e');return}
+    const users=currentUsers||DEFAULT_USERS;
+    if(!window.crypto||!window.crypto.subtle){showAlert('loginAlert','浏览器不支持安全加密 (需要 HTTPS)','e');return}
+    const hash=await sha256(p+SALT);
+    if(users[u]&&users[u].password===hash){
+      currentUser={username:u,role:users[u].role};
+      sessionStorage.setItem('qrc_user',JSON.stringify(currentUser));
+      $('loginPage').style.display='none';$('app').style.display='flex';
+      $('sUser').textContent=u;$('sRole').textContent=users[u].role;
+      $('tbUser').textContent=u;
+      if(users[u].role==='admin'){$('adminSec').style.display='block';$('navUsers').style.display='block'}
+      loadConfig();initNav();showPage('dashboard');renderDeployLog();
+    }else{
+      showAlert('loginAlert','用户名或密码错误','e');
+      $('loginPass').value='';$('loginPass').focus();
+    }
+  }catch(e){
+    console.error('Login error:',e);
+    showAlert('loginAlert','登录失败：请刷新页面后重试 [E:'+(e.message||'unknown')+']','e');
+  }finally{
+    btn.disabled=false;btn.textContent=origText;btn.style.opacity='1';
+  }
+}
+
+function doLogout(){
+  currentUser=null;localStorage.removeItem('qrc_user');sessionStorage.removeItem('qrc_user');
+  $('loginPage').style.display='flex';$('app').style.display='none';
+  $('loginUser').value='';$('loginPass').value='';$('loginAlert').className='alert';$('mainAlert').className='alert';
+}
+
+function initNav(){
+  qsa('.sidebar-nav a[data-page]').forEach(a=>a.addEventListener('click',function(e){
+    e.preventDefault();showPage(this.dataset.page);closeSidebar();
+    qsa('.sidebar-nav a.active').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+  }));
+}
+
+async function loadConfig(){
+  // 优先从GitHub raw获取（绕过CDN缓存），fallback到相对路径
+  var cfgUrl='../config.js?t='+Date.now();
+  var loaded=false;
+  try{var r=await fetch(cfgUrl);if(r.ok){var t=await r.text();var m=t.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(m){siteConfig=JSON.parse(m[1]);loaded=true}}}catch(e){}
+  // 如果解析失败，尝试直接获取GitHub raw（用于admin页面自身）
+  if(!loaded){
+    try{
+      var repoM=location.hostname.match(/^([^\.]+)\.github\.io/);
+      if(repoM){
+        var rawUrl='https://raw.githubusercontent.com/'+repoM[1]+'/'+location.pathname.match(/\/([^\/]+)\//)[1]+'/gh-pages/config.js?t='+Date.now();
+        var r2=await fetch(rawUrl);
+        if(r2.ok){var t2=await r2.text();var m2=t2.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(m2){siteConfig=JSON.parse(m2[1]);loaded=true}}
+      }
+    }catch(e2){}
+  }
+  if(!loaded)siteConfig=JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  currentConfig=JSON.parse(JSON.stringify(siteConfig||DEFAULT_CONFIG));
+  const du=loadLocal('deploy');if(du){deployRepo=du.repo||'';deployBranch=du.branch||'gh-pages';deployToken=du.token||'';imgbbKey=du.imgbbKey||''}
+  currentUsers=loadLocal('users')||DEFAULT_USERS;
+}
+
+// =================== 配置完成度计算 ===================
+function calcProgress(){
+  const cfg=currentConfig||DEFAULT_CONFIG;
+  let total=0,done=0;
+  // 品牌名称
+  total++;if(i18nGet(cfg.brand?.name,'zh'))done++;
+  total++;if(i18nGet(cfg.brand?.name,'en'))done++;
+  // Logo
+  total++;if(cfg.brand?.logo)done++;
+  // Hero
+  total++;if(cfg.hero?.image)done++;
+  total++;if(i18nGet(cfg.hero?.title,'zh'))done++;
+  // 产品
+  total++;if((cfg.products||[]).length>=1)done++;
+  // 关于
+  total++;if(i18nGet(cfg.about?.title,'zh'))done++;
+  // 微信
+  total++;if(cfg.contact?.wechat?.qrImage)done++;
+  // WhatsApp
+  total++;if(cfg.contact?.whatsapp?.phone)done++;
+  // SEO
+  total++;if(i18nGet(cfg.seo?.title,'zh'))done++;
+  total++;if(cfg.seo?.description)done++;
+  return {done,total,pct:Math.round(done/Math.max(total,1)*100)};
+}
+
+// =================== 页面渲染 ===================
+function showPage(name){
+  $('pageContainer').innerHTML='';$('mainAlert').className='alert';
+  switch(name){
+    case 'dashboard':renderDashboard();renderDeployLog();break;
+    case 'brand':renderBrand();break;
+    case 'products':renderProducts();break;
+    case 'pages':renderPages();break;
+    case 'contact':renderContact();break;
+    case 'deploy':renderDeploy();break;
+    case 'users':renderUsers();break;
+  }
+}
+
+// ===== Dashboard（重新设计）=====
+function renderDashboard(){
+  const cfg=currentConfig||DEFAULT_CONFIG;
+  const c=cfg.contact||{};
+  const prog=calcProgress();
+  var m=deployRepo?deployRepo.match(/github\.com\/([^\/]+?)\/([^\/]+?)(?:\.git)?$/):null;
+  var siteLinkHtml='';
+  if(m){siteLinkHtml='<a class=\"site-link\" href=\"https://'+m[1]+'.github.io/'+m[2]+'/\" target=\"_blank\">\u{1f310} \u8bbf\u95ee\u6211\u7684\u7f51\u7ad9 \u2192</a>';}
+  else{siteLinkHtml='<span class=\"site-link\" style=\"opacity:.6\">\u26a0\ufe0f \u8bf7\u5148\u914d\u7f6e\u90e8\u7f72\u4fe1\u606f</span>';}
+
+  $('pageContainer').innerHTML=`
+    <!-- 欢迎横幅 -->
+    <div class="dash-welcome">
+      <h2>👋 欢迎，${currentUser?currentUser.username:'Admin'}！</h2>
+      <p>这里是你的营销网站管理中心，一站式完成配置与发布。</p>
+      ${siteLinkHtml}
+    </div>
+
+    <!-- 统计卡片 -->
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text-light)">📈 数据概览</h3>
+    <div class="stats">
+      <div class="stat-card"><div class="num">${(cfg.products||[]).length}</div><div class="lbl">产品数量</div></div>
+      <div class="stat-card"><div class="num">${prog.pct}%</div><div class="lbl">配置完成度</div></div>
+      <div class="stat-card"><div class="num" style="font-size:18px">${c.whatsapp?.enabled&&c.wechat?.enabled?'已就绪':'待完善'}</div><div class="lbl">联系方式状态</div></div>
+    </div>
+
+    <!-- 配置进度 -->
+    <div class="card">
+      <div class="card-title">📋 配置完成度</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>已完成 ${prog.done}/${prog.total} 项基础配置</span><strong style="color:${prog.pct>=80?'var(--success)':prog.pct>=50?'#E67E22':'var(--danger)'}">${prog.pct}%</strong></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${prog.pct}%"></div></div>
+      <p style="font-size:12px;color:#888;margin-top:8px">${prog.pct<50?'💡 建议先完成「品牌设置」和「联系方式」的基本信息':prog.pct<80?'👍 进展不错！继续完善产品信息和页面内容':'🎉 太棒了！配置基本完整，可以预览并发布网站了'}</p>
+    </div>
+
+    <!-- 快速入口 -->
+    <div class="card">
+      <div class="card-title">⚡ 快速操作</div>
+      <div class="quick-grid">
+        <a class="quick-item" onclick="showPage('brand');qsa('.sidebar-nav a.active')[0]?.classList.remove('active');document.querySelector('[data-page=brand]').classList.add('active')"><span class="qi-icon">🏷️</span><div><div class="qi-text">品牌设置</div><div class="qi-sub">名称、Logo、配色</div></div></a>
+        <a class="quick-item" onclick="showPage('products');qsa('.sidebar-nav a.active')[0]?.classList.remove('active');document.querySelector('[data-page=products]').classList.add('active')"><span class="qi-icon">🛍️</span><div><div class="qi-text">产品管理</div><div class="qi-sub">添加编辑产品</div></div></a>
+        <a class="quick-item" onclick="showPage('contact');qsa('.sidebar-nav a.active')[0]?.classList.remove('active');document.querySelector('[data-page=contact]').classList.add('active')"><span class="qi-icon">📞</span><div><div class="qi-text">联系方式</div><div class="qi-sub">微信、WhatsApp 等</div></div></a>
+        <a class="quick-item" onclick="showPage('deploy');qsa('.sidebar-nav a.active')[0]?.classList.remove('active');document.querySelector('[data-page=deploy]').classList.add('active')"><span class="qi-icon">🚀</span><div><div class="qi-text">一键发布</div><div class="qi-sub">生成 & 部署到 GitHub</div></div></a>
+      </div>
+    </div>
+
+    <!-- 使用指引 -->
+    <div class="card">
+      <div class="card-title">📖 新手指南</div>
+      <div class="guide-steps">
+        <div class="guide-step">
+          <div class="guide-num"></div>
+          <div class="guide-body"><div class="gt">设置品牌基本信息</div><div class="gd">填写品牌中英文名称、标语、选择主色调，可上传 Logo 图片。</div><a class="gb" onclick="showPage('brand')">前往设置 →</a></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num"></div>
+          <div class="guide-body"><div class="gt">添加产品信息</div><div class="gd">添加产品名称、分类、价格和描述，每个产品可上传一张展示图。</div><a class="gb" onclick="showPage('products')">添加产品 →</a></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num"></div>
+          <div class="guide-body"><div class="gt">配置联系方式</div><div class="gd">启用微信、WhatsApp 等渠道，填写手机号，上传二维码图片。</div><a class="gb" onclick="showPage('contact')">配置联系 →</a></div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-num"></div>
+          <div class="guide-body"><div class="gt">配置并一键部署</div><div class="gd">在「生成&部署」页填入 GitHub Token，点击按钮即可自动发布网站。</div><a class="gb" onclick="showPage('deploy')">开始部署 →</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 部署状态 -->
+    <div class="card">
+      <div class="card-title">🚀 发布站点</div>
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">所有配置保存后，点击下方按钮一键生成并发布网站。</p>
+      <div class="depoly-actions">
+        <button class="btn btn-p" onclick="generateSite(false)">📁 仅下载 config.js</button>
+        <button class="btn btn-s" onclick="generateSite(true)">🚀 一键发布到线上</button>
+      </div>
+      <div class="status" id="genStatus"></div>
+    </div>
+
+    <!-- 网站二维码 -->
+    <div class="card">
+      <div class="card-title">📱 网站二维码</div>
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">生成当前网站的二维码，微信/WhatsApp 扫码直达。</p>
+      <div id="qrcodeArea" style="text-align:center;padding:16px 0"></div>
+      <div id="qrcodeUrl" style="font-size:12px;color:#999;text-align:center;word-break:break-all;margin-top:8px"></div>
+      <div class="depoly-actions" style="margin-top:12px">
+        <button class="btn btn-p" onclick="genSiteQR()">🔲 生成网站二维码</button>
+        <button class="btn btn-o btn-sm" onclick="downloadQR()" style="display:none" id="downloadQRBn">⬇️ 下载二维码</button>
+      </div>
+    </div>
+
+    <!-- 发布日志 -->
+    <div class="card">
+      <div class="card-title">📋 发布日志</div>
+      <div id="deployLogArea"><div class="empty">加载中...</div></div>
+    </div>`;
+}
+
+// ===== 品牌设置 =====
+function renderBrand(){
+  const b=currentConfig.brand||{};
+  $('pageContainer').innerHTML=`
+    <h1 class="page-title">🏷️ 品牌设置</h1>
+    <form onsubmit="saveBrand(event)" style="margin:0">
+    <div class="card"><div class="card-title">基本信息</div>
+      <div class="fg"><div class="lh">EN</div><label>品牌名称</label><input class="fi" id="brand_name_en" value="${esc(i18nGet(b.name,'en'))}" placeholder="English"></div>
+      <div class="fg"><div class="lh">ZH</div><label>中文名称</label><input class="fi" id="brand_name_zh" value="${esc(i18nGet(b.name,'zh'))}" placeholder="中文"></div>
+      <div class="fg"><div class="lh">EN</div><label>品牌标语</label><input class="fi" id="brand_slogan_en" value="${esc(i18nGet(b.slogan,'en'))}" placeholder="English"></div>
+      <div class="fg"><div class="lh">ZH</div><label>中文标语</label><input class="fi" id="brand_slogan_zh" value="${esc(i18nGet(b.slogan,'zh'))}" placeholder="中文"></div>
+      <div class="fg"><label>Logo 图片</label>${imgField('brand_logo','品牌 Logo',b.logo||'')}</div>
+    </div>
+    <div class="card"><div class="card-title">配色方案</div>
+      ${colorRow('主色调','brand_primary',b.primaryColor||'#C9A96E')}
+      ${colorRow('辅助色','brand_secondary',b.secondaryColor||'#2D2D2D')}
+      ${colorRow('背景色','brand_bg',b.bgColor||'#FFFFFF')}
+      ${colorRow('区块底色','brand_accent',b.accentBg||'#FAF8F5')}
+    </div>
+    <button type="submit" class="btn btn-p">💾 保存品牌设置</button>
+    </form>`;
+}
+
+function colorRow(label,id,val){
+  return `<div class="fg"><label>${label}</label><div class="cr"><input type="color" id="${id}_c" value="${val}" onchange="$('${id}').value=this.value"><input class="fi" id="${id}" value="${val}" onchange="$('${id}_c').value=this.value" style="width:100px"></div></div>`;
+}
+
+function saveBrand(e){
+  e.preventDefault();
+  currentConfig.brand=currentConfig.brand||{};
+  const b=currentConfig.brand;
+  b.name=i18nSet(b.name,'en',$('brand_name_en').value);b.name=i18nSet(b.name,'zh',$('brand_name_zh').value);
+  b.slogan=i18nSet(b.slogan,'en',$('brand_slogan_en').value);b.slogan=i18nSet(b.slogan,'zh',$('brand_slogan_zh').value);
+  b.logo=$('brand_logo').value;b.primaryColor=$('brand_primary').value;b.secondaryColor=$('brand_secondary').value;
+  b.bgColor=$('brand_bg').value;b.accentBg=$('brand_accent').value;
+  saveConfig();toast('✅ 品牌设置已保存','success');
+}
+
+// ===== 产品管理 =====
+function renderProducts(){
+  const cfg=currentConfig,p=cfg.products||[],cats=cfg.productCategories||[];
+  let rows='';
+  p.forEach((pr,i)=>{
+    rows+=`<tr><td>${i+1}</td><td>${esc(i18nGet(pr.name,'zh'))}</td><td>${esc(i18nGet(pr.category,'zh'))}</td><td>${esc(pr.price||'-')}</td><td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${esc(pr.image?'已上传':'-')}</td><td><button class="btn btn-d btn-sm" onclick="deleteProduct(${i})">删除</button></td></tr>`;
+  });
+  $('pageContainer').innerHTML=`
+    <h1 class="page-title">🛍️ 产品管理</h1>
+    <form onsubmit="saveProductMeta(event)" style="margin:0">
+    <div class="card"><div class="card-title">区块设置</div>
+      <div class="fg"><div class="lh">EN</div><label>区块标题</label><input class="fi" id="prod_title_en" value="${esc(i18nGet(cfg.productsMeta?.title,'en'))}" placeholder="Our Products"></div>
+      <div class="fg"><div class="lh">ZH</div><label>中文标题</label><input class="fi" id="prod_title_zh" value="${esc(i18nGet(cfg.productsMeta?.title,'zh'))}" placeholder="我们的产品"></div>
+      <div class="fg"><label>分类（逗号分隔）</label><input class="fi" id="prod_cats" value="${esc(cats.map(c=>i18nGet(c,'zh')).join(', '))}"></div>
+      <button type="submit" class="btn btn-p btn-sm">💾 保存设置</button>
+    </div>
+    </form>
+    <div class="card"><div class="card-title">产品列表 (${p.length})</div>
+      ${p.length?`<table><thead><tr><th>#</th><th>名称</th><th>分类</th><th>价格</th><th>图片</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`:'<div class="empty">📦 暂无产品，请在下方添加</div>'}
+    </div>
+    <form onsubmit="addProduct(event)" style="margin:0">
+    <div class="card"><div class="card-title">＋ 添加产品</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>名称</label><input class="fi" id="new_pname_en" placeholder="English" required></div><div class="fg"><div class="lh">ZH</div><label>中文名</label><input class="fi" id="new_pname_zh" placeholder="中文"></div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>分类</label><input class="fi" id="new_pcat_en" placeholder="English"></div><div class="fg"><div class="lh">ZH</div><label>中文分类</label><input class="fi" id="new_pcat_zh" placeholder="中文" required></div></div>
+      <div class="fr"><div class="fg"><label>价格</label><input class="fi" id="new_price" placeholder="$29.00"></div><div class="fg"><label>产品图片</label>${imgField('new_pimg','产品图','')}</div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>描述</label><input class="fi" id="new_pdesc_en" placeholder="English"></div><div class="fg"><div class="lh">ZH</div><label>中文描述</label><input class="fi" id="new_pdesc_zh" placeholder="中文"></div></div>
+      <button type="submit" class="btn btn-p">＋ 添加</button>
+    </div>
+    </form>`;
+}
+
+function saveProductMeta(e){e.preventDefault();
+  currentConfig.productsMeta=currentConfig.productsMeta||{};
+  currentConfig.productsMeta.title=i18nSet(currentConfig.productsMeta.title,'en',$('prod_title_en').value);
+  currentConfig.productsMeta.title=i18nSet(currentConfig.productsMeta.title,'zh',$('prod_title_zh').value);
+  const cats=$('prod_cats').value.split(',').map(s=>s.trim()).filter(Boolean);
+  currentConfig.productCategories=cats.map(c=>({en:c,zh:c}));
+  saveConfig();toast('✅ 产品设置已保存','success');
+}
+
+function addProduct(e){e.preventDefault();
+  const p={};p.name={};if($('new_pname_en').value)p.name.en=$('new_pname_en').value;if($('new_pname_zh').value)p.name.zh=$('new_pname_zh').value;
+  p.category={};if($('new_pcat_en').value)p.category.en=$('new_pcat_en').value;if($('new_pcat_zh').value)p.category.zh=$('new_pcat_zh').value;
+  p.price=$('new_price').value;p.image=$('new_pimg').value;
+  p.description={};if($('new_pdesc_en').value)p.description.en=$('new_pdesc_en').value;if($('new_pdesc_zh').value)p.description.zh=$('new_pdesc_zh').value;
+  (currentConfig.products=currentConfig.products||[]).push(p);
+  saveConfig();renderProducts();toast('✅ 产品已添加','success');
+}
+
+function deleteProduct(i){if(confirm('确认删除该产品？')){currentConfig.products.splice(i,1);saveConfig();renderProducts();toast('产品已删除','info')}}
+
+// ===== 页面内容 =====
+function renderPages(){
+  const cfg=currentConfig,s=cfg.seo||{},h=cfg.hero||{},a=cfg.about||{};
+  const abt=(a.paragraphs||[]).reduce((acc,p)=>(acc.en+=(p.en||'')+'\n',acc.zh+=(p.zh||'')+'\n',acc),{en:'',zh:''});
+  const i18=cfg.i18n||{};
+  $('pageContainer').innerHTML=`
+    <h1 class="page-title">📄 页面内容</h1>
+    <form onsubmit="saveSEO(event)" style="margin:0">
+    <div class="card"><div class="card-title">🔍 SEO 设置</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>页面标题</label><input class="fi" id="seo_title_en" value="${esc(i18nGet(s.title,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文标题</label><input class="fi" id="seo_title_zh" value="${esc(i18nGet(s.title,'zh'))}"></div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>描述</label><input class="fi" id="seo_desc_en" value="${esc(i18nGet(s.description,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文描述</label><input class="fi" id="seo_desc_zh" value="${esc(i18nGet(s.description,'zh'))}"></div></div>
+      <div class="fg"><label>关键词</label><input class="fi" id="seo_kw" value="${esc(s.keywords||'')}"></div>
+      <div class="fg"><label>OG 封面图</label>${imgField('seo_og','OG封面图',s.ogImage||'')}</div>
+      <button type="submit" class="btn btn-p btn-sm">💾 保存 SEO</button>
+    </div></form>
+    <form onsubmit="saveI18n(event)" style="margin:0">
+    <div class="card"><div class="card-title">🌐 多语言设置</div>
+      <div class="fr"><div class="fg"><label>默认语言</label><select class="fi" id="i18n_def"><option value="en" ${i18.defaultLanguage==='en'?'selected':''}>English</option><option value="zh" ${i18.defaultLanguage==='zh'?'selected':''}>中文</option></select></div><div class="fg"><label>启用语言</label><input class="fi" id="i18n_langs" value="${esc((i18.languages||['en','zh']).join(', '))}"></div></div>
+      <button type="submit" class="btn btn-p btn-sm">💾 保存语言设置</button>
+    </div></form>
+    <form onsubmit="saveHero(event)" style="margin:0">
+    <div class="card"><div class="card-title">🎯 首屏 Hero 区域</div>
+      <div class="fg"><label>大图背景</label>${imgField('hero_img','首屏大图',h.image||'')}</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>主标题</label><input class="fi" id="hero_title_en" value="${esc(i18nGet(h.title,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文标题</label><input class="fi" id="hero_title_zh" value="${esc(i18nGet(h.title,'zh'))}"></div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>副标题</label><input class="fi" id="hero_sub_en" value="${esc(i18nGet(h.subtitle,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文副标题</label><input class="fi" id="hero_sub_zh" value="${esc(i18nGet(h.subtitle,'zh'))}"></div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>按钮文字</label><input class="fi" id="hero_cta_en" value="${esc(i18nGet(h.ctaText,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文 CTA</label><input class="fi" id="hero_cta_zh" value="${esc(i18nGet(h.ctaText,'zh'))}"></div></div>
+      <div class="fg"><label>按钮链接</label><input class="fi" id="hero_cta_link" value="${esc(h.ctaLink||'#products')}"></div>
+      <button type="submit" class="btn btn-p btn-sm">💾 保存 Hero</button>
+    </div></form>
+    <form onsubmit="saveAbout(event)" style="margin:0">
+    <div class="card"><div class="card-title">📖 关于我们</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>标题</label><input class="fi" id="about_title_en" value="${esc(i18nGet(a.title,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文标题</label><input class="fi" id="about_title_zh" value="${esc(i18nGet(a.title,'zh'))}"></div></div>
+      <div class="fg"><label>配图</label>${imgField('about_img','关于页配图',a.image||'')}</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>内容（每行一段）</label><textarea class="fi" id="about_p_en" rows="4">${esc(abt.en.trim())}</textarea></div><div class="fg"><div class="lh">ZH</div><label>中文内容</label><textarea class="fi" id="about_p_zh" rows="4">${esc(abt.zh.trim())}</textarea></div></div>
+      <button type="submit" class="btn btn-p btn-sm">💾 保存关于</button>
+    </div></form>`;
+}
+
+function saveSEO(e){e.preventDefault();const s=currentConfig.seo=currentConfig.seo||{};
+  s.title=i18nSet(s.title,'en',$('seo_title_en').value);s.title=i18nSet(s.title,'zh',$('seo_title_zh').value);
+  s.description=i18nSet(s.description,'en',$('seo_desc_en').value);s.description=i18nSet(s.description,'zh',$('seo_desc_zh').value);
+  s.keywords=$('seo_kw').value;s.ogImage=$('seo_og').value;saveConfig();toast('✅ SEO 设置已保存','success');}
+function saveI18n(e){e.preventDefault();currentConfig.i18n={defaultLanguage:$('i18n_def').value,languages:$('i18n_langs').value.split(',').map(s=>s.trim()).filter(Boolean)};saveConfig();toast('✅ 语言设置已保存','success');}
+function saveHero(e){e.preventDefault();const h=currentConfig.hero=currentConfig.hero||{};
+  h.image=$('hero_img').value;h.title=i18nSet(h.title,'en',$('hero_title_en').value);h.title=i18nSet(h.title,'zh',$('hero_title_zh').value);
+  h.subtitle=i18nSet(h.subtitle,'en',$('hero_sub_en').value);h.subtitle=i18nSet(h.subtitle,'zh',$('hero_sub_zh').value);
+  h.ctaText=i18nSet(h.ctaText,'en',$('hero_cta_en').value);h.ctaText=i18nSet(h.ctaText,'zh',$('hero_cta_zh').value);
+  h.ctaLink=$('hero_cta_link').value;saveConfig();toast('✅ Hero 内容已保存','success');}
+function saveAbout(e){e.preventDefault();const a=currentConfig.about=currentConfig.about||{};
+  a.image=$('about_img').value;a.title=i18nSet(a.title,'en',$('about_title_en').value);a.title=i18nSet(a.title,'zh',$('about_title_zh').value);
+  const en=$('about_p_en').value.split('\n').map(s=>s.trim()).filter(Boolean),zh=$('about_p_zh').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  a.paragraphs=[];for(let i=0;i<Math.max(en.length,zh.length);i++){const p={};if(i<en.length)p.en=en[i];if(i<zh.length)p.zh=zh[i];if(Object.keys(p).length)a.paragraphs.push(p)}
+  saveConfig();toast('✅ 关于内容已保存','success');}
+
+// ===== 联系方式 =====
+function renderContact(){
+  const c=currentConfig.contact||{},w=c.wechat||{},wa=c.whatsapp||{},ws=c.website||{},em=c.email||{},sq=c.siteQR||{};
+  $('pageContainer').innerHTML=`
+    <h1 class="page-title">📞 联系方式</h1><form onsubmit="saveContact(event)" style="margin:0">
+    <div class="card"><div class="card-title">💬 微信咨询</div>
+      <label class="chk"><input type="checkbox" id="wx_en" ${w.enabled?'checked':''}> 启用微信入口</label>
+      <div class="fg"><label>二维码图片</label>${imgField('wx_qr','微信二维码',w.qrImage||'')}</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>按钮文字</label><input class="fi" id="wx_label_en" value="${esc(i18nGet(w.label,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文按钮</label><input class="fi" id="wx_label_zh" value="${esc(i18nGet(w.label,'zh'))}"></div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>提示文字</label><input class="fi" id="wx_hint_en" value="${esc(i18nGet(w.hint,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文提示</label><input class="fi" id="wx_hint_zh" value="${esc(i18nGet(w.hint,'zh'))}"></div></div>
+    </div>
+    <div class="card"><div class="card-title">📱 WhatsApp</div>
+      <label class="chk"><input type="checkbox" id="wa_en" ${wa.enabled?'checked':''}> 启用 WhatsApp</label>
+      <div class="fg"><label>手机号（含国家码）</label><input class="fi" id="wa_phone" value="${esc(wa.phone||'')}" placeholder="8613800138000"></div>
+      <div class="fg"><label>二维码图片</label>${imgField('wa_qr','WhatsApp二维码',wa.qrImage||'')}</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>招呼消息</label><input class="fi" id="wa_msg_en" value="${esc(i18nGet(wa.message,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文招呼</label><input class="fi" id="wa_msg_zh" value="${esc(i18nGet(wa.message,'zh'))}"></div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>按钮文字</label><input class="fi" id="wa_label_en" value="${esc(i18nGet(wa.label,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文按钮</label><input class="fi" id="wa_label_zh" value="${esc(i18nGet(wa.label,'zh'))}"></div></div>
+    </div>
+    <div class="card"><div class="card-title">🌐 个人网站</div>
+      <label class="chk"><input type="checkbox" id="ws_en" ${ws.enabled?'checked':''}> 显示网站入口</label>
+      <div class="fg"><label>网站 URL</label><input class="fi" id="ws_url" value="${esc(ws.url||'')}" placeholder="https://your-website.com"></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>按钮文字</label><input class="fi" id="ws_label_en" value="${esc(i18nGet(ws.label,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文按钮</label><input class="fi" id="ws_label_zh" value="${esc(i18nGet(ws.label,'zh'))}"></div></div>
+      <label class="chk"><input type="checkbox" id="ws_nt" ${ws.openNewTab?'checked':''}> 新窗口打开</label>
+    </div>
+    <div class="card"><div class="card-title">📧 邮箱</div>
+      <label class="chk"><input type="checkbox" id="em_en" ${em.enabled?'checked':''}> 显示邮箱</label>
+      <div class="fg"><label>邮箱地址</label><input class="fi" id="em_addr" value="${esc(em.address||'')}"></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>按钮文字</label><input class="fi" id="em_label_en" value="${esc(i18nGet(em.label,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文按钮</label><input class="fi" id="em_label_zh" value="${esc(i18nGet(em.label,'zh'))}"></div></div>
+    </div>
+    <div class="card"><div class="card-title">🔗 站点入口二维码</div>
+      <label class="chk"><input type="checkbox" id="sq_en" ${sq.enabled?'checked':''}> 启用</label>
+      <div class="fg"><label>网站 URL</label><input class="fi" id="sq_url" value="${esc(sq.url||'')}"></div>
+      <div class="fg"><label>自定义二维码</label>${imgField('sq_qr','站点二维码',sq.qrImage||'')}</div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>标签文字</label><input class="fi" id="sq_label_en" value="${esc(i18nGet(sq.label,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文标签</label><input class="fi" id="sq_label_zh" value="${esc(i18nGet(sq.label,'zh'))}"></div></div>
+      <div class="fr"><div class="fg"><div class="lh">EN</div><label>提示文字</label><input class="fi" id="sq_hint_en" value="${esc(i18nGet(sq.hint,'en'))}"></div><div class="fg"><div class="lh">ZH</div><label>中文提示</label><input class="fi" id="sq_hint_zh" value="${esc(i18nGet(sq.hint,'zh'))}"></div></div>
+      <label class="chk"><input type="checkbox" id="sq_show" ${sq.showOnPage?'checked':''}> 在网页中展示</label>
+    </div>
+    <button type="submit" class="btn btn-p">💾 保存联系方式</button></form>`;
+}
+
+function saveContact(e){e.preventDefault();
+  const c=currentConfig.contact=currentConfig.contact||{};
+  c.wechat={enabled:$('wx_en').checked,qrImage:$('wx_qr').value,label:i18nSet({},'en',$('wx_label_en').value),hint:i18nSet({},'zh',$('wx_hint_en').value),modalTitle:{},modalHint:{}};
+  c.wechat.label=i18nSet(c.wechat.label,'zh',$('wx_label_zh').value);c.wechat.hint=i18nSet(c.wechat.hint,'en',$('wx_hint_en').value);c.wechat.hint=i18nSet(c.wechat.hint,'zh',$('wx_hint_zh').value);
+  c.whatsapp={enabled:$('wa_en').checked,phone:$('wa_phone').value,qrImage:$('wa_qr').value,message:i18nSet({},'en',$('wa_msg_en').value),label:i18nSet({},'en',$('wa_label_en').value),modalTitle:{},modalHint:{}};
+  c.whatsapp.message=i18nSet(c.whatsapp.message,'zh',$('wa_msg_zh').value);c.whatsapp.label=i18nSet(c.whatsapp.label,'zh',$('wa_label_zh').value);
+  c.website={enabled:$('ws_en').checked,url:$('ws_url').value,label:i18nSet({},'en',$('ws_label_en').value),openNewTab:$('ws_nt').checked};
+  c.website.label=i18nSet(c.website.label,'zh',$('ws_label_zh').value);
+  c.email={enabled:$('em_en').checked,address:$('em_addr').value,label:i18nSet({},'en',$('em_label_en').value)};c.email.label=i18nSet(c.email.label,'zh',$('em_label_zh').value);
+  c.siteQR={enabled:$('sq_en').checked,url:$('sq_url').value,qrImage:$('sq_qr').value,label:i18nSet({},'en',$('sq_label_en').value),hint:i18nSet({},'en',$('sq_hint_en').value),showOnPage:$('sq_show').checked};
+  c.siteQR.label=i18nSet(c.siteQR.label,'zh',$('sq_label_zh').value);c.siteQR.hint=i18nSet(c.siteQR.hint,'zh',$('sq_hint_zh').value);
+  saveConfig();toast('✅ 联系方式已保存','success');
+}
+
+// ===== 部署 =====
+function renderDeploy(){
+  $('pageContainer').innerHTML=`
+    <h1 class="page-title">🚀 生成 & 部署</h1>
+    <form onsubmit="saveDeploy(event)" style="margin:0">
+    <div class="card"><div class="card-title">📦 GitHub Pages 部署设置</div>
+      <div class="fg"><label>仓库 URL</label><input class="fi" id="depo_repo" value="${esc(deployRepo)}" placeholder="https://github.com/用户名/仓库名.git"></div>
+      <div class="fr"><div class="fg"><label>分支</label><input class="fi" id="depo_branch" value="${esc(deployBranch)}"></div><div class="fg"><label>GitHub Token</label><input type="password" class="fi" id="depo_token" value="${esc(deployToken)}" placeholder="github_pat_xxxxxxxx"></div></div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px">获取 Token: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens (需 Contents 读写权限)</p>
+      <div class="fg"><label>🖼️ ImgBB API Key（可选，上传高清图片用）</label><input type="password" class="fi" id="depo_imgbb" value="${esc(imgbbKey||'')}" placeholder="点击查看如何获取免费Key">
+      <p style="font-size:12px;color:#888;margin-top:4px"><a href="javascript:void(0)" onclick="alert('ImgBB免费图床申请方法：\n1. 打开 https://api.imgbb.com/\n2. 点击 \"Sign in\" 或 \"Registration\"\n3. 注册/登录后访问 https://api.imgbb.com/1/image?key=\n4. 或直接访问 https://imgbb.com/upload\n5. 登录后在 https://api.imgbb.com/ 获取您的API Key\n\n免费额度：10GB存储空间，单张最大32MB，支持JPG/PNG/GIF/WebP等格式。\n\n如果没有ImgBB Key，系统会改用本地base64存储（适合小图片）')">📖 如何获取免费 ImgBB Key？</a></p></div>
+      <button type="submit" class="btn btn-p btn-sm">💾 保存部署设置</button>
+    </div></form>
+    <div class="card"><div class="card-title">⚡ 一键生成</div>
+      <p style="font-size:13px;color:#888;margin-bottom:12px">所有配置保存后，点击下方按钮。首次部署需要填写上方 GitHub 信息。</p>
+      <div class="depoly-actions">
+        <button class="btn btn-p" onclick="generateSite(false)">📁 仅下载 config.js</button>
+        <button class="btn btn-s" onclick="generateSite(true)">🚀 一键发布到线上</button>
+      </div>
+      <div class="status" id="genStatus"></div>
+    </div>`;
+}
+
+function saveDeploy(e){e.preventDefault();deployRepo=$('depo_repo').value;deployBranch=$('depo_branch').value||'gh-pages';deployToken=$('depo_token').value;imgbbKey=$('depo_imgbb').value.trim();saveLocal('deploy',{repo:deployRepo,branch:deployBranch,token:deployToken,imgbbKey:imgbbKey});toast('✅ 部署设置已保存','success');}
+
+// ===== 生成 & 部署 =====
+async function generateSite(deploy){
+  const s=$('genStatus');
+  if(!s)s.innerHTML='<span style="color:#888">⏳ 正在处理...</span>';
+  else{s.innerHTML='<span style="color:#888">⏳ 正在生成 config.js...</span>';}
+    saveConfig();
+    var prevHash=getConfigHash(currentConfig); // 部署前的配置摘要
+    var now=new Date();
+    var ver='v'+now.getFullYear()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+now.getHours().toString().padStart(2,'0')+now.getMinutes().toString().padStart(2,'0')+now.getSeconds().toString().padStart(2,'0');
+    var cfgFile='config.live.js?v='+Date.now();
+    const js=`window.SITE_CONFIG = ${JSON.stringify(currentConfig,null,2)};`;
+    if(!deploy){const blob=new Blob([js],{type:'application/javascript'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='config.js';a.click();if(s)s.innerHTML='<span class="s-s">✅ config.js 已下载！</span><br><span style="color:#888">手动替换网站目录中的 config.js 文件即可。</span>';toast('✅ config.js 已下载','success');return}
+    if(!deployRepo||!deployToken){if(s)s.innerHTML='<span class="s-e">❌ 请先配置 GitHub 仓库和 Token</span>';toast('❌ 请先配置部署信息','error');return}
+    try{
+      const repoMatch=deployRepo.match(/github\.com\/([^\/]+?)\/([^\/]+?)(?:\.git)?$/);
+      if(!repoMatch){if(s)s.innerHTML='<span class="s-e">❌ 仓库 URL 格式错误</span>';toast('❌ 仓库URL格式错误','error');return}
+      const owner=repoMatch[1],repo=repoMatch[2];
+      const siteUrl='https://'+owner+'.github.io/'+repo+'/';
+      var cfgSize=(js.length/1024).toFixed(0);
+      if(s)s.innerHTML='<span style="color:#888">⏳ [1/4] 正在上传配置文件 ('+cfgSize+'KB)...</span>';
+      const jsWithVer=`/* ${ver} */\n`+js;
+      if(s)s.innerHTML='<span style="color:#888">⏳ [1/4] 正在上传配置文件...（文件较大请耐心等待，最多2分钟）</span>';
+      await uploadFile(owner,repo,deployBranch,cfgFile,jsWithVer,'Update site config ['+ver+']',120);
+      if(s)s.innerHTML='<span style="color:#888">⏳ [2/4] 正在上传网站主页...</span>';
+      const idxResp=await fetch(location.href.replace(/\/admin\/.*/,'/index.html'));
+      if(!idxResp.ok)throw new Error('获取网站主页模板失败，请确认网站目录中存在 index.html');
+      let idxText=await idxResp.text();
+      // 引用新文件名 config.live.js，带时间戳彻底绕过CDN缓存
+      idxText=idxText.replace(/config(\.live)?\.js(\?v=[^"]*)?/,'config.live.js?v='+Date.now());
+      await uploadFile(owner,repo,deployBranch,'index.html',idxText,'Update site index ['+ver+']',60);
+      if(s)s.innerHTML='<span style="color:#888">⏳ [3/4] 正在删除旧配置文件...</span>';
+      try{await uploadFile(owner,repo,deployBranch,'config.js','','Remove old config.js',10)}catch(e){}
+      if(s)s.innerHTML='<span style="color:#888">⏳ [4/4] 正在上传管理页面...</span>';
+      const resp=await fetch(location.href);
+      let adminHtmlText=await resp.text();
+      adminHtmlText=adminHtmlText.replace('<meta name="robots" content="noindex">','<meta name="robots" content="noindex">\n<meta name="deploy-ver" content="'+ver+'">');
+      await uploadFile(owner,repo,deployBranch,'admin/index.html',adminHtmlText,'Update admin page ['+ver+']',60);
+      var newHash=getConfigHash(currentConfig);
+      var logEntry={user:currentUser?currentUser.username:deployRepo.match(/github\.com\/([^\/]+?)\//)[1],prevConfigHash:prevHash,configHash:newHash,siteUrl:siteUrl,status:'success',version:ver};
+      addLog(logEntry);
+      var forceUrl=siteUrl+'?t='+Date.now();
+      if(s)s.innerHTML=`<span class="s-s">✅ 发布成功！</span><br>🌐 <a href="${forceUrl}" target="_blank">🔄 立即访问网站</a><br>🔧 <a href="${forceUrl}admin/" target="_blank">管理后台</a><br><span style="color:#888">⚡ 使用新配置文件 <code>${cfgFile}</code>，完全绕过CDN缓存</span>`;
+      toast('🎉 网站发布成功！','success');
+  }catch(e){
+    var errMsg=e.message||'未知错误';
+    if(errMsg.includes('timeout')||errMsg.includes('aborted')){errMsg='上传超时！文件太大，建议减少图片数量或尺寸后重试。单个base64图片建议不超过200KB。';}
+    if(errMsg.includes('401')||errMsg.includes('403')){errMsg='Token 无效或权限不足，请检查 Token 是否有 Contents 写入权限';}
+    if(errMsg.includes('413')||errMsg.includes('payload')){errMsg='文件过大，请减少上传的图片大小';}
+    if(s)s.innerHTML=`<span class="s-e">❌ 部署失败: ${errMsg}</span>`;
+    toast('❌ 部署失败: '+errMsg,'error');
+    var logEntry={user:currentUser?currentUser.username:'-',status:'fail',changeDesc:errMsg,time:new Date().toLocaleString('zh-CN')};
+    addLog(logEntry);
+  }
+}
+
+// uploadFile: 使用 XMLHttpRequest 支持上传进度
+function uploadFile(owner,repo,branch,path,content,msg,timeoutSec){
+  return new Promise(function(resolve,reject){
+    timeoutSec=timeoutSec||30;
+    var sha=null;
+    // 先获取文件SHA
+    fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`,{
+      headers:{Authorization:`Bearer ${deployToken}`,Accept:'application/vnd.github.v3+json'}
+    }).then(function(resp){
+      if(resp.ok)return resp.json().then(function(d){sha=d.sha});
+    }).catch(function(){}).then(function(){
+      // 上传文件（带进度）
+      var xhr=new XMLHttpRequest();
+      var timer=setTimeout(function(){xhr.abort();},timeoutSec*1000);
+      var encoded=btoa(unescape(encodeURIComponent(content)));
+      var body=JSON.stringify({message:msg,content:encoded,branch:branch});
+      if(sha)body=JSON.stringify({message:msg,content:encoded,branch:branch,sha:sha});
+      xhr.open('PUT',`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
+      xhr.setRequestHeader('Authorization',`Bearer ${deployToken}`);
+      xhr.setRequestHeader('Content-Type','application/json');
+      xhr.setRequestHeader('Accept','application/vnd.github.v3+json');
+      xhr.upload.addEventListener('progress',function(e){
+        if(e.lengthComputable){
+          var pct=Math.round(e.loaded/e.total*100);
+          var st=$('genStatus');
+          if(st&&pct<100)st.innerHTML='<span style="color:#888">⏳ 上传中... '+pct+'%</span>';
+        }
+      });
+      xhr.addEventListener('load',function(){
+        clearTimeout(timer);
+        if(xhr.status>=200&&xhr.status<300){
+          resolve(JSON.parse(xhr.responseText));
+        }else{
+          var err='上传失败(HTTP '+xhr.status+')';
+          try{var d=JSON.parse(xhr.responseText);if(d.message)err=d.message;}catch(e){}
+          reject(new Error(err));
+        }
+      });
+      xhr.addEventListener('error',function(){clearTimeout(timer);reject(new Error('网络错误，请检查网络连接'));});
+      xhr.addEventListener('timeout',function(){clearTimeout(timer);reject(new Error('上传超时('+timeoutSec+'s)，文件可能过大，请减少图片大小后重试'));});
+      xhr.addEventListener('abort',function(){clearTimeout(timer);reject(new Error('上传被中断'));});
+      xhr.send(body);
+    });
+  });
+}
+
+// ===== 用户管理 =====
+function renderUsers(){
+  if(!currentUser||currentUser.role!=='admin'){showPage('dashboard');return}
+  const users=currentUsers||DEFAULT_USERS;let rows='';
+  Object.values(users).forEach(u=>{var rcls=u.role==='admin'?'tag-admin':'tag-editor';var delBtn=u.username==='admin'?'<span style="font-size:11px;color:#BBB">系统管理员</span>':'<button class="btn btn-d btn-sm" onclick="deleteUser(\''+esc(u.username)+'\')">删除</button>';rows+='<tr><td><strong>'+esc(u.username)+'</strong></td><td><span class="tag '+rcls+'">'+esc(u.role)+'</span></td><td>'+delBtn+'</td></tr>'});
+  $('pageContainer').innerHTML=`
+    <h1 class="page-title">👥 用户管理</h1>
+    <div class="card"><div class="card-title">用户列表 (${Object.keys(users).length})</div><table><thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <form onsubmit="createUser(event)" style="margin:0"><div class="card"><div class="card-title">＋ 创建用户</div>
+      <div class="fr"><div class="fg"><label>用户名</label><input class="fi" id="nu_name" placeholder="新用户名" required></div><div class="fg"><label>密码</label><input type="password" class="fi" id="nu_pass" placeholder="密码" required></div><div class="fg"><label>角色</label><select class="fi" id="nu_role"><option value="editor">Editor</option><option value="admin">Admin</option></select></div></div>
+      <button type="submit" class="btn btn-p">＋ 创建用户</button>
+    </div></form>
+    <form onsubmit="updateUserPass(event)" style="margin:0"><div class="card"><div class="card-title">✏️ 修改密码</div>
+      <div class="fr"><div class="fg"><label>用户名</label><input class="fi" id="up_name" placeholder="用户名" required></div><div class="fg"><label>新密码</label><input type="password" class="fi" id="up_pass" placeholder="新密码" required></div></div>
+      <button type="submit" class="btn-o btn-sm">✏️ 修改密码</button>
+    </div></form>`;
+}
+
+async function createUser(e){e.preventDefault();
+  const name=$('nu_name').value.trim(),pass=$('nu_pass').value,role=$('nu_role').value;
+  if(currentUsers[name]){toast('❌ 用户已存在','error');return}
+  const hash=await sha256(pass+SALT);currentUsers[name]={username:name,password:hash,role:role};
+  saveLocal('users',currentUsers);renderUsers();toast('✅ 用户 '+name+' 创建成功','success');
+}
+async function updateUserPass(e){e.preventDefault();
+  const name=$('up_name').value.trim(),pass=$('up_pass').value;
+  if(!currentUsers[name]){toast('❌ 用户不存在','error');return}
+  currentUsers[name].password=await sha256(pass+SALT);
+  saveLocal('users',currentUsers);renderUsers();toast('✅ '+name+' 密码已更新','success');
+}
+function deleteUser(name){if(!confirm('确认删除用户 '+name+'？'))return;delete currentUsers[name];saveLocal('users',currentUsers);renderUsers();toast(name+' 已删除','info')}
+
+function saveConfig(){localStorage.setItem('qrc_config',JSON.stringify(currentConfig));}
+
+// ===== 部署日志 =====
+const MAX_LOG=50; // 最多保留50条
+function loadLogs(){
+  try{return JSON.parse(localStorage.getItem('qrc_logs')||'[]')}catch(e){return []}
+}
+function saveLogs(logs){
+  logs=logs.slice(0,MAX_LOG);
+  localStorage.setItem('qrc_logs',JSON.stringify(logs));
+}
+function addLog(entry){
+  const logs=loadLogs();
+  // 计算本次变更摘要
+  var changes=[];
+  if(entry.configHash){
+    var prev=logs.find(function(l){return l.configHash===entry.prevConfigHash});
+    if(prev&&prev.changes&&entry.changes){
+      Object.keys(entry.changes).forEach(function(k){
+        var labels={brand:'品牌设置',products:'产品管理',contact:'联系方式',hero:'首屏Hero',about:'关于我们',seo:'SEO设置',i18n:'语言设置',navigation:'导航菜单',advanced:'高级设置',productCategories:'产品分类',productsMeta:'产品区块'};
+        changes.push(labels[k]||k);
+      });
+    }else{changes=['首次完整发布'];}
+  }else{changes=['管理页面更新'];}
+  entry.changes=changes;
+  entry.time=new Date().toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  logs.unshift(entry);
+  saveLogs(logs);
+  renderDeployLog();
+}
+function renderDeployLog(){
+  var area=$('deployLogArea');if(!area)return;
+  var logs=loadLogs();
+  if(!logs.length){area.innerHTML='<div class="empty">暂无发布记录</div>';return;}
+  var html='<table style="font-size:12px"><thead><tr><th>时间</th><th>操作人</th><th>变更内容</th><th>状态</th><th>站点</th></tr></thead><tbody>';
+  logs.forEach(function(l){
+    var statusHtml=l.status==='success'?'<span style="color:var(--success)">✅ 成功</span>':'<span style="color:var(--danger)">❌ 失败</span>';
+    var siteUrl='-';if(l.siteUrl)siteUrl='<a href="'+l.siteUrl+'" target="_blank" style="color:var(--primary)">访问</a>';
+    var chStr=l.changes&&l.changes.length?l.changes.join(', '):(l.changeDesc||'-');
+    html+='<tr><td style="white-space:nowrap">'+esc(l.time||'')+'</td><td>'+esc(l.user||'-')+'</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(chStr)+'">'+esc(chStr)+'</td><td>'+statusHtml+'</td><td>'+siteUrl+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  if(logs.length>1)html+='<div style="margin-top:8px;text-align:right"><button class="btn btn-o btn-sm" onclick="clearDeployLog()">🗑 清空日志</button></div>';
+  area.innerHTML=html;
+}
+function clearDeployLog(){
+  if(!confirm('确认清空所有发布日志？'))return;
+  localStorage.removeItem('qrc_logs');
+  renderDeployLog();
+  toast('日志已清空','info');
+}
+function getConfigHash(cfg){
+  var keys=['brand','products','contact','hero','about','seo','i18n','navigation','productCategories','productsMeta','advanced'];
+  var partial={};
+  keys.forEach(function(k){if(cfg[k])partial[k]=k==='products'?(cfg[k]||[]).length:k==='productCategories'?(cfg[k]||[]).length:JSON.stringify(cfg[k])});
+  var s=JSON.stringify(partial);
+  var h=0;
+  for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h=h&h;}
+  return Math.abs(h).toString(16);
+}
+
+// ===== 网站二维码生成（API方式）=====
+var _siteQRUrl='';
+function genSiteURL(){
+  var m=deployRepo?deployRepo.match(/github\.com\/([^\/]+?)\/([^\/]+?)(?:\.git)?$/):null;
+  if(m){_siteQRUrl='https://'+m[1]+'.github.io/'+m[2]+'/';}
+  else{_siteQRUrl='https://'+location.hostname+location.pathname.replace(/\/admin\/?$/,'/');}
+  return _siteQRUrl;
+}
+function genSiteQR(){
+  var url=genSiteURL();
+  var area=$('qrcodeArea');
+  area.innerHTML='<div style=\"color:#888;font-size:13px;padding:20px 0\">\u2699\ufe0f \u6b63\u5728\u751f\u6210...</div>';
+  $('qrcodeUrl').innerHTML='';
+  $('downloadQRBn').style.display='none';
+  var img=document.createElement('img');
+  img.style.maxWidth='220px';img.style.borderRadius='8px';img.style.border='1px solid var(--border)';
+  img.onload=function(){
+    area.innerHTML='';area.appendChild(img);
+    $('qrcodeUrl').innerHTML='\ud83d\udcc5 '+url;
+    $('downloadQRBn').style.display='inline-block';
+    toast('\ud83d\udce6 \u7f51\u7ad9\u4e8c\u7ef4\u7801\u5df2\u751f\u6210','success');
+  };
+  img.onerror=function(){
+    area.innerHTML='\u274c \u751f\u6210\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc';
+    toast('\u4e8c\u7ef4\u7801\u751f\u6210\u5931\u8d25','error');
+  };
+  img.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(url);
+}
+function downloadQR(){
+  var img=$('qrcodeArea').querySelector('img');
+  if(!img){toast('\u8bf7\u5148\u751f\u6210\u4e8c\u7ef4\u7801','error');return;}
+  var canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;canvas.getContext('2d').drawImage(img,0,0);
+  var a=document.createElement('a');a.download='site-qrcode.png';a.href=canvas.toDataURL('image/png');a.click();
+  toast('\ud83d\udce6 \u4e8c\u7ef4\u7801\u5df2\u4e0b\u8f7d','info');
+}
+
+
+// ===== 启动 =====
+(async function(){
+  localStorage.removeItem('qrc_user'); // 清理旧session，强制要求重新登录
+  currentUsers=loadLocal('users')||DEFAULT_USERS;
+  const du=loadLocal('deploy');if(du){deployRepo=du.repo||'';deployBranch=du.branch||'gh-pages';deployToken=du.token||'';imgbbKey=du.imgbbKey||''}
+  try{const r=await fetch('../config.js?t='+Date.now());if(r.ok){const t=await r.text();const m=t.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(m)siteConfig=JSON.parse(m[1])}}catch(e){siteConfig=JSON.parse(JSON.stringify(DEFAULT_CONFIG))}
+  currentConfig=JSON.parse(JSON.stringify(siteConfig||DEFAULT_CONFIG));
+  $('loginUser').focus();
+  $('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
+})();
+</script>
+</body>
+</html>
