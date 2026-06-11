@@ -11,10 +11,19 @@
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#C9A96E">
   <title>Your Brand</title>
-  <link rel="icon" type="image/png" href="">
+  <link rel="icon" type="image/svg+xml" href="">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+  <!-- ============ Sparkles Background ============ -->
+  <div class="sparkles-container" id="sparklesContainer" aria-hidden="true">
+    <div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div>
+    <div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div>
+  </div>
 
   <!-- ============ Navigation ============ -->
   <nav class="nav nav-white" id="navbar">
@@ -48,15 +57,41 @@
     <div class="hero-content">
       <h1 class="hero-title" id="heroTitle">Your Brand</h1>
       <p class="hero-subtitle" id="heroSubtitle">Everyday Elegance</p>
-      <a class="hero-cta" id="heroCta" href="#products">探索产品</a>
+      <a class="hero-cta" id="heroCta" href="#products">Discover</a>
     </div>
-    <div class="hero-scroll" aria-hidden="true">⌄</div>
+    <div class="hero-scroll" aria-hidden="true" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">⌄</div>
+  </section>
+
+  <!-- ============ Featured Banner ============ -->
+  <section class="featured-banner reveal" id="featuredBanner">
+    <div class="container featured-banner-content">
+      <h3 id="featuredTitle">The Art of Fine Jewelry</h3>
+      <p id="featuredSubtitle">Every piece tells a story of passion, precision, and timeless beauty.</p>
+      <div class="features-row">
+        <div class="feature-item reveal">
+          <div class="feature-icon">💎</div>
+          <span id="feature1">Ethically Sourced</span>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">✨</div>
+          <span id="feature2">Handcrafted</span>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">🎁</div>
+          <span id="feature3">Luxury Packaging</span>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">🛡️</div>
+          <span id="feature4">Lifetime Warranty</span>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ Products ============ -->
-  <section class="products-section section-padding" id="products">
+  <section class="products-section section-padding reveal" id="products">
     <div class="container">
-      <h2 class="section-title" id="productsTitle">Our Products</h2>
+      <h2 class="section-title" id="productsTitle">Our Collection</h2>
       <div class="section-divider"></div>
       <div class="filter-bar" id="filterBar"></div>
       <div class="product-grid" id="productGrid"></div>
@@ -65,23 +100,37 @@
   </section>
 
   <!-- ============ About ============ -->
-  <section class="about-section section-padding" id="about">
+  <section class="about-section section-padding reveal" id="about">
     <div class="container">
       <div class="about-grid">
-        <div class="about-image" id="aboutImage"></div>
-        <div class="about-text">
-          <h2 class="section-title" id="aboutTitle">About Us</h2>
+        <div class="about-image reveal" id="aboutImage"></div>
+        <div class="about-text reveal">
+          <h2 class="section-title" id="aboutTitle">Our Story</h2>
           <div class="section-divider"></div>
           <div id="aboutContent"></div>
+          <div class="about-stats">
+            <div class="about-stat">
+              <div class="about-stat-number" id="statYears">25+</div>
+              <div class="about-stat-label" id="statYearsLabel">Years of Craft</div>
+            </div>
+            <div class="about-stat">
+              <div class="about-stat-number" id="statDesigns">10k+</div>
+              <div class="about-stat-label" id="statDesignsLabel">Designs Created</div>
+            </div>
+            <div class="about-stat">
+              <div class="about-stat-number" id="statClients">50k+</div>
+              <div class="about-stat-label" id="statClientsLabel">Happy Clients</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ============ Contact ============ -->
-  <section class="contact-section section-padding" id="contact">
+  <section class="contact-section section-padding reveal" id="contact">
     <div class="container">
-      <h2 class="section-title">Contact Us</h2>
+      <h2 class="section-title" id="contactSectionTitle">Get in Touch</h2>
       <div class="section-divider"></div>
       <div class="contact-cards" id="contactCards"></div>
       <a class="contact-website-btn" id="contactWebsiteBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;"></a>
@@ -108,7 +157,7 @@
   <div class="modal-overlay" id="qrModal">
     <div class="modal">
       <button class="modal-close" id="modalClose">&times;</button>
-      <h3 id="modalTitle">扫描二维码</h3>
+      <h3 id="modalTitle">Scan QR Code</h3>
       <p id="modalHint"></p>
       <div id="modalQrContainer"></div>
       <div id="modalAction"></div>
