@@ -1120,8 +1120,14 @@ function saveContact(e){e.preventDefault();
 
 // ===== 部署 =====
 function renderDeploy(){
+  var env=envConfig[currentEnv];
+  var isStaging=currentEnv==='staging';
   $('pageContainer').innerHTML=`
     <h1 class="page-title">🚀 生成 & 部署</h1>
+    <div class="card" style="background:${isStaging?'#E8F8F5':'#EBF5FB'};border-color:${isStaging?'#27AE60':'#3498DB'}">
+      <div style="font-size:15px;font-weight:600">${env.icon} 当前环境：${env.name}环境</div>
+      <div style="font-size:13px;color:#888;margin-top:4px">网站：${env.siteUrl}</div>
+    </div>
     <form onsubmit="saveDeploy(event)" style="margin:0">
     <div class="card"><div class="card-title">📦 GitHub Pages 部署设置</div>
       <div class="fg"><label>仓库 URL</label><input class="fi" id="depo_repo" value="${esc(deployRepo)}" placeholder="https://github.com/用户名/仓库名.git"></div>
@@ -1131,11 +1137,11 @@ function renderDeploy(){
       <p style="font-size:12px;color:#888;margin-top:4px"><a href="javascript:void(0)" onclick="alert('ImgBB免费图床申请方法：\n1. 打开 https://api.imgbb.com/\n2. 点击 \"Sign in\" 或 \"Registration\"\n3. 注册/登录后访问 https://api.imgbb.com/1/image?key=\n4. 或直接访问 https://imgbb.com/upload\n5. 登录后在 https://api.imgbb.com/ 获取您的API Key\n\n免费额度：10GB存储空间，单张最大32MB，支持JPG/PNG/GIF/WebP等格式。\n\n如果没有ImgBB Key，系统会改用本地base64存储（适合小图片）')">📖 如何获取免费 ImgBB Key？</a></p></div>
       <button type="submit" class="btn btn-p btn-sm">💾 保存部署设置</button>
     </div></form>
-    <div class="card"><div class="card-title">⚡ 一键生成</div>
-      <p style="font-size:13px;color:#888;margin-bottom:12px">所有配置保存后，点击下方按钮。首次部署需要填写上方 GitHub 信息。</p>
+    <div class="card"><div class="card-title">⚡ 部署操作</div>
+      <p style="font-size:13px;color:#888;margin-bottom:12px">所有配置保存后，点击下方按钮。</p>
       <div class="depoly-actions">
         <button class="btn btn-p" onclick="generateSite(false)">📁 仅下载 config.js</button>
-        <button class="btn btn-s" onclick="generateSite(true)">🚀 一键发布到线上</button>
+        <button class="btn btn-s" onclick="generateSite(true)">🚀 部署到${env.name}环境</button>
       </div>
       <div class="status" id="genStatus"></div>
     </div>`;
