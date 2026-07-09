@@ -317,14 +317,18 @@ var envConfig={
     icon:'🟢',
     siteUrl:'https://test2025-start.github.io/dev-tyla-rita-brand-site/',
     adminUrl:'https://test2025-start.github.io/dev-tyla-rita-brand-site/admin/',
-    repo:'dev-tyla-rita-brand-site'
+    repo:'dev-tyla-rita-brand-site',
+    repoUrl:'https://github.com/Test2025-start/dev-tyla-rita-brand-site.git',
+    branch:'main'
   },
   production:{
     name:'生产',
     icon:'🔵',
     siteUrl:'https://test2025-start.github.io/tyla-rita-brand-site/',
     adminUrl:'https://test2025-start.github.io/tyla-rita-brand-site/admin/',
-    repo:'tyla-rita-brand-site'
+    repo:'tyla-rita-brand-site',
+    repoUrl:'https://github.com/Test2025-start/tyla-rita-brand-site.git',
+    branch:'gh-pages'
   }
 };
 // 通过 URL 自动识别环境
@@ -775,7 +779,11 @@ async function loadConfig(){
   if(!loaded)siteConfig=JSON.parse(JSON.stringify(DEFAULT_CONFIG));
   cachedConfig=JSON.parse(JSON.stringify(siteConfig));
   currentConfig=JSON.parse(JSON.stringify(siteConfig||DEFAULT_CONFIG));
-  const du=loadLocal('deploy');if(du){deployRepo=du.repo||'';deployBranch=du.branch||'gh-pages';deployToken=du.token||'';imgbbKey=du.imgbbKey||''}
+  // 部署目标（仓库/分支）由 envConfig 锁定（URL 识别环境），操作者无法通过 localStorage 改向
+  const envLocked=envConfig[currentEnv]||{};
+  deployRepo=envLocked.repoUrl||'';
+  deployBranch=envLocked.branch||'gh-pages';
+  const du=loadLocal('deploy');if(du){deployToken=du.token||'';imgbbKey=du.imgbbKey||''}
   currentUsers=loadLocal('users')||DEFAULT_USERS;
 }
 
@@ -1130,8 +1138,8 @@ function renderDeploy(){
     </div>
     <form onsubmit="saveDeploy(event)" style="margin:0">
     <div class="card"><div class="card-title">📦 GitHub Pages 部署设置</div>
-      <div class="fg"><label>仓库 URL</label><input class="fi" id="depo_repo" value="${esc(deployRepo)}" placeholder="https://github.com/用户名/仓库名.git"></div>
-      <div class="fr"><div class="fg"><label>分支</label><input class="fi" id="depo_branch" value="${esc(deployBranch)}"></div><div class="fg"><label>GitHub Token</label><input type="password" class="fi" id="depo_token" value="${esc(deployToken)}" placeholder="github_pat_xxxxxxxx"></div></div>
+      <div class="fg"><label>仓库 URL（已由环境锁定）</label><input class="fi" id="depo_repo" value="${esc(deployRepo)}" readonly style="background:#f5f5f5;color:#888"></div>
+      <div class="fr"><div class="fg"><label>分支（已由环境锁定）</label><input class="fi" id="depo_branch" value="${esc(deployBranch)}" readonly style="background:#f5f5f5;color:#888"></div><div class="fg"><label>GitHub Token</label><input type="password" class="fi" id="depo_token" value="${esc(deployToken)}" placeholder="github_pat_xxxxxxxx"></div></div>
       <p style="font-size:12px;color:#888;margin-bottom:12px">获取 Token: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens (需 Contents 读写权限)</p>
       <div class="fg"><label>🖼️ ImgBB API Key（可选，上传高清图片用）</label><input type="password" class="fi" id="depo_imgbb" value="${esc(imgbbKey||'')}" placeholder="点击查看如何获取免费Key">
       <p style="font-size:12px;color:#888;margin-top:4px"><a href="javascript:void(0)" onclick="alert('ImgBB免费图床申请方法：\n1. 打开 https://api.imgbb.com/\n2. 点击 \"Sign in\" 或 \"Registration\"\n3. 注册/登录后访问 https://api.imgbb.com/1/image?key=\n4. 或直接访问 https://imgbb.com/upload\n5. 登录后在 https://api.imgbb.com/ 获取您的API Key\n\n免费额度：10GB存储空间，单张最大32MB，支持JPG/PNG/GIF/WebP等格式。\n\n如果没有ImgBB Key，系统会改用本地base64存储（适合小图片）')">📖 如何获取免费 ImgBB Key？</a></p></div>
@@ -1152,10 +1160,30 @@ function saveDeploy(e){e.preventDefault();deployRepo=$('depo_repo').value;deploy
 // ===== 生成 & 部署 =====
 async function generateSite(deploy){
   if(deploy){
-    // 发布前确认对话框
+    // 部署目标已由 envConfig 锁定（URL 识别环境）
+    const envLocked=envConfig[currentEnv]||{};
+    deployRepo=envLocked.repoUrl||deployRepo;
+    deployBranch=envLocked.branch||deployBranch;
+    const targetSite=envLocked.siteUrl||'';
+    const isProd=currentEnv==='production';
+    // 4.4 部署前 diff：拉取远程 config.live.js 对比
+    var diffMsg='（首次部署或无法获取远程）';
+    if(targetSite){
+      try{
+        var rr=await fetch(targetSite+'config.live.js?t='+Date.now(),{cache:'no-store'});
+        if(rr.ok){var rt=await rr.text();var rm=rt.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(rm){
+          var rc=JSON.parse(rm[1]);var diffs=[];
+          if(JSON.stringify(rc.brand&&rc.brand.name)!==JSON.stringify(currentConfig&&currentConfig.brand&&currentConfig.brand.name))diffs.push('品牌变化');
+          if((rc.products||[]).length!==((currentConfig&&currentConfig.products)||[]).length)diffs.push('产品数:'+(rc.products||[]).length+'->'+((currentConfig&&currentConfig.products)||[]).length);
+          diffMsg=diffs.length?('差异: '+diffs.join('，')):'无配置差异';
+        }}
+      }catch(e){diffMsg='（远程拉取失败，跳过 diff）'}
+    }
+    // 4.5 PROD 显式确认门
     const brand=i18nGet(currentConfig?.brand?.name)||'未配置';
     const products=(currentConfig?.products||[]).length;
-    const msg=`即将发布到线上\n\n品牌: ${brand}\n产品数: ${products} 个\n\n确认发布吗？`;
+    const envLabel=isProd?'⚠️ 生产环境（PROD）':'灰度环境';
+    const msg=`即将发布到${envLabel}\n\n目标仓库: ${deployRepo}\n分支: ${deployBranch}\n线上: ${targetSite}\n品牌: ${brand}\n产品数: ${products} 个\n配置 diff: ${diffMsg}\n\n${isProd?'⚠️ 这是生产环境部署，确认发布吗？':'确认发布吗？'}`;
     if(!confirm(msg)){return;}
   }
   const s=$('genStatus');
@@ -1193,11 +1221,24 @@ async function generateSite(deploy){
       let adminHtmlText=await resp.text();
       adminHtmlText=adminHtmlText.replace('<meta name="robots" content="noindex">','<meta name="robots" content="noindex">\n<meta name="deploy-ver" content="'+ver+'">');
       await uploadFile(owner,repo,deployBranch,'admin/index.html',adminHtmlText,'Update admin page ['+ver+']',60);
+      // 4.6 部署后校验：回拉远程 config.live.js 比对
+      var verifyMsg='';
+      if(siteUrl){
+        try{await new Promise(r=>setTimeout(r,2000));
+          var vr=await fetch(siteUrl+'config.live.js?t='+Date.now(),{cache:'no-store'});
+          if(vr.ok){var vt=await vr.text();var vm=vt.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(vm){
+            var vc=JSON.parse(vm[1]);
+            if(JSON.stringify(vc.brand&&vc.brand.name)!==JSON.stringify(currentConfig&&currentConfig.brand&&currentConfig.brand.name)){
+              verifyMsg='⚠️ 线上品牌字段暂不符（可能 CDN 缓存，几分钟后刷新）';
+            }
+          }}
+        }catch(e){verifyMsg='⚠️ 线上校验拉取失败（可能 CDN 延迟）'}
+      }
       var newHash=getConfigHash(currentConfig);
       var logEntry={user:currentUser?currentUser.username:deployRepo.match(/github\.com\/([^\/]+?)\//)[1],prevConfigHash:prevHash,configHash:newHash,siteUrl:siteUrl,status:'success',version:ver};
       addLog(logEntry);
       var forceUrl=siteUrl+'?t='+Date.now();
-      if(s)s.innerHTML=`<span class="s-s">✅ 发布成功！</span><br>🌐 <a href="${forceUrl}" target="_blank">🔄 立即访问网站</a><br>🔧 <a href="${forceUrl}admin/" target="_blank">管理后台</a><br><span style="color:#888">⚡ 使用新配置文件 <code>${cfgFile}</code>，完全绕过CDN缓存</span>`;
+      if(s)s.innerHTML=`<span class="s-s">✅ 发布成功！</span><br>🌐 <a href="${forceUrl}" target="_blank">🔄 立即访问网站</a><br>🔧 <a href="${forceUrl}admin/" target="_blank">管理后台</a><br><span style="color:#888">⚡ 使用新配置文件 <code>${cfgFile}</code>，完全绕过CDN缓存</span>${verifyMsg?'<br><span style="color:#E67E22">'+verifyMsg+'</span>':''}`;
       toast('🎉 网站发布成功！','success');
       clearDirty();
   }catch(e){
@@ -1392,7 +1433,8 @@ function downloadQR(){
 (async function(){
   localStorage.removeItem('qrc_user'); // 清理旧session，强制要求重新登录
   currentUsers=loadLocal('users')||DEFAULT_USERS;
-  const du=loadLocal('deploy');if(du){deployRepo=du.repo||'';deployBranch=du.branch||'gh-pages';deployToken=du.token||'';imgbbKey=du.imgbbKey||''}
+  const envLocked0=envConfig[currentEnv]||{};deployRepo=envLocked0.repoUrl||'';deployBranch=envLocked0.branch||'gh-pages';
+  const du=loadLocal('deploy');if(du){deployToken=du.token||'';imgbbKey=du.imgbbKey||''}
   // 启动时不加载 config.js，登录后按需加载
   $('loginUser').focus();
   $('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
