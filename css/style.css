@@ -205,6 +205,11 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; bac
   letter-spacing: 0.08em;
   color: var(--color-dark);
 }
+/* Mobile menu open: the white nav chrome (logo / language / close-X) sits over the
+   white .nav-mobile overlay, so mirror the .scrolled state and force dark for contrast. */
+.nav-white.nav-menu-open .nav-logo,
+.nav-white.nav-menu-open .lang-current { color: var(--color-dark); }
+.nav-white.nav-menu-open .nav-toggle span { background: var(--color-dark); }
 
 /* Floating WhatsApp */
 .float-wa {

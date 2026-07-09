@@ -110,7 +110,7 @@ window.SITE_CONFIG = {
         "zh": "项链"
       },
       "price": "$129.00",
-      "image": "assets/images/product_3a2257fb.svg",
+      "image": "assets/images/product_01_pearl_necklace.svg",
       "description": {
         "en": "Luminous freshwater pearls with 18K gold-plated chain. Timeless elegance for every occasion.",
         "zh": "光泽淡水珍珠搭配18K镀金链条，经典优雅适合各种场合。"
@@ -126,7 +126,7 @@ window.SITE_CONFIG = {
         "zh": "戒指"
       },
       "price": "$459.00",
-      "image": "assets/images/product_1ff6a924.svg",
+      "image": "assets/images/product_02_diamond_ring.svg",
       "description": {
         "en": "Brilliant-cut solitaire in platinum setting. A symbol of forever.",
         "zh": "明亮式切割独钻镶嵌铂金戒托，永恒的象征。"
@@ -142,7 +142,7 @@ window.SITE_CONFIG = {
         "zh": "手链"
       },
       "price": "$289.00",
-      "image": "assets/images/product_7e4ea298.svg",
+      "image": "assets/images/product_03_gold_bracelet.svg",
       "description": {
         "en": "Handcrafted 18K gold bracelet with sapphire, ruby & diamond accents.",
         "zh": "手工打造18K金手镯，镶嵌蓝宝石、红宝石与钻石点缀。"
@@ -158,7 +158,7 @@ window.SITE_CONFIG = {
         "zh": "项链"
       },
       "price": "$349.00",
-      "image": "assets/images/product_0a3ead6c.svg",
+      "image": "assets/images/product_04_sapphire_pendant.svg",
       "description": {
         "en": "Ceylon sapphire teardrop pendant on white gold chain. Deep ocean blue brilliance.",
         "zh": "锡兰蓝宝石水滴吊坠配白金链，深邃海洋蓝的光芒。"
@@ -174,7 +174,7 @@ window.SITE_CONFIG = {
         "zh": "耳环"
       },
       "price": "$219.00",
-      "image": "assets/images/product_d2b29026.svg",
+      "image": "assets/images/product_05_ruby_earrings.svg",
       "description": {
         "en": "Burmese ruby drop earrings in 18K gold. Passionate red, exquisite sparkle.",
         "zh": "缅甸红宝石滴坠耳环配18K金托，热情红色尽显精致。"
@@ -190,7 +190,7 @@ window.SITE_CONFIG = {
         "zh": "项链"
       },
       "price": "$199.00",
-      "image": "assets/images/product_e7c7d886.svg",
+      "image": "assets/images/product_06_amethyst_necklace.svg",
       "description": {
         "en": "Amethyst crystals on rose gold vine chain. Inspired by nature's grace.",
         "zh": "紫水晶晶体镶嵌玫瑰金藤蔓链，灵感源自自然的优雅。"
@@ -206,7 +206,7 @@ window.SITE_CONFIG = {
         "zh": "戒指"
       },
       "price": "$179.00",
-      "image": "assets/images/product_f3e59962.svg",
+      "image": "assets/images/product_07_rose_gold_ring.svg",
       "description": {
         "en": "Delicate five-petal flower ring in 18K rose gold with diamond center.",
         "zh": "精致五瓣花形戒指配18K玫瑰金，钻石花心。"
@@ -222,7 +222,7 @@ window.SITE_CONFIG = {
         "zh": "手链"
       },
       "price": "$159.00",
-      "image": "assets/images/product_0010b432.svg",
+      "image": "assets/images/product_08_crystal_bracelet.svg",
       "description": {
         "en": "Brilliant Austrian crystals in fine gold-plated setting. Everyday luxury.",
         "zh": "璀璨奥地利水晶镶嵌精致镀金底座，日常奢华之选。"
@@ -282,7 +282,7 @@ window.SITE_CONFIG = {
         "en": "Hi LUXE, I'd love to know more about your collection!",
         "zh": "你好LUXE，我想了解更多关于你们的首饰系列！"
       },
-      "qrImage": "assets/qrcodes/whatsapp-qr.png",
+      "qrImage": "",
       "label": {
         "en": "WhatsApp",
         "zh": "WhatsApp"
@@ -328,8 +328,7 @@ window.SITE_CONFIG = {
         "en": "Scan QR to open on mobile",
         "zh": "手机扫码打开网站"
       },
-      "showOnPage": true,
-      "qrImage": "assets/qrcodes/site-qr.png"
+      "showOnPage": true
     }
   },
   "seo": {
