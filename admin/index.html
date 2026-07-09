@@ -1157,6 +1157,77 @@ function renderDeploy(){
 
 function saveDeploy(e){e.preventDefault();deployRepo=$('depo_repo').value;deployBranch=$('depo_branch').value||'gh-pages';deployToken=$('depo_token').value;imgbbKey=$('depo_imgbb').value.trim();saveLocal('deploy',{repo:deployRepo,branch:deployBranch,token:deployToken,imgbbKey:imgbbKey});toast('✅ 部署设置已保存','success');}
 
+// ===== 配置合并（多人协作防覆盖，对标 shared/config_merge.py）=====
+function _isImageField(key,value){
+  if(typeof value!=='string')return false;
+  if({image:1,logo:1,qrImage:1,ogImage:1,favicon:1,qr:1}[key])return true;
+  return key.endsWith('Image')||key.endsWith('image');
+}
+function _mergeI18n(local,remote){
+  if(local&&typeof local==='object'&&remote&&typeof remote==='object'){
+    var r=JSON.parse(JSON.stringify(remote));
+    for(var k in local)if(local[k])r[k]=local[k];
+    return r;
+  }
+  if(local&&typeof local==='object')return local;
+  if(remote&&typeof remote==='object')return remote;
+  return (local!==null&&local!=='')?local:remote;
+}
+function _mergeImage(local,remote){if(!local)return remote;if(!remote)return local;return local;}
+function _itemName(item){
+  if(item&&typeof item==='object'){var n=item.name;if(!n)return '';if(typeof n==='object')return n.zh||n.en||String(n);return String(n);}
+  return String(item);
+}
+function _mergeArray(local,remote){
+  if(!Array.isArray(local))return Array.isArray(remote)?JSON.parse(JSON.stringify(remote)):[];
+  if(!Array.isArray(remote))return JSON.parse(JSON.stringify(local));
+  var result=JSON.parse(JSON.stringify(remote));
+  var rnames={};remote.forEach(function(it,i){var n=_itemName(it);if(n)rnames[n]=i;});
+  local.forEach(function(it){
+    var n=_itemName(it);
+    if(n&&n in rnames)result[rnames[n]]=_mergeDicts(it,result[rnames[n]]);
+    else result.push(JSON.parse(JSON.stringify(it)));
+  });
+  return result;
+}
+function _mergeDicts(local,remote){
+  if(!local||typeof local!=='object')return(remote&&typeof remote==='object')?remote:local;
+  if(!remote||typeof remote!=='object')return local;
+  var result=JSON.parse(JSON.stringify(remote));
+  for(var key in local){if(!local.hasOwnProperty(key))continue;
+    var lv=local[key],rv=remote[key];
+    if(key==='_meta'){result[key]=lv;continue;}
+    if(_isImageField(key,lv)||_isImageField(key,rv)){result[key]=_mergeImage(lv,rv);continue;}
+    if(lv&&typeof lv==='object'&&rv&&typeof rv==='object'){
+      if(('en' in lv)||('zh' in lv)||('en' in rv)||('zh' in rv)){result[key]=_mergeI18n(lv,rv);continue;}
+    }
+    if(Array.isArray(lv)&&Array.isArray(rv)){result[key]=_mergeArray(lv,rv);continue;}
+    if(lv&&typeof lv==='object'&&rv&&typeof rv==='object'){result[key]=_mergeDicts(lv,rv);continue;}
+    if(lv!==null&&lv!=='')result[key]=lv;
+  }
+  return result;
+}
+function mergeConfigs(localConfig,remoteConfig){
+  if(!remoteConfig)return JSON.parse(JSON.stringify(localConfig));
+  if(!localConfig)return JSON.parse(JSON.stringify(remoteConfig));
+  return _mergeDicts(localConfig,remoteConfig);
+}
+function mergeSummary(localConfig,remoteConfig){
+  if(!remoteConfig)return '（无远程配置，首次部署）';
+  var parts=[];
+  var lp=(localConfig&&localConfig.products)||[],rp=(remoteConfig&&remoteConfig.products)||[];
+  var ln={},rn={};
+  lp.forEach(function(p){var n=_itemName(p);if(n)ln[n]=1;});
+  rp.forEach(function(p){var n=_itemName(p);if(n)rn[n]=1;});
+  var ro=rp.filter(function(p){var n=_itemName(p);return n&&!ln[n];}).length;
+  var lo=lp.filter(function(p){var n=_itemName(p);return n&&!rn[n];}).length;
+  if(ro)parts.push('远程他人新增产品 '+ro+' 个（将保留）');
+  if(lo)parts.push('你新增产品 '+lo+' 个（将加入）');
+  var lb=localConfig&&localConfig.brand&&localConfig.brand.name,rb=remoteConfig&&remoteConfig.brand&&remoteConfig.brand.name;
+  if(JSON.stringify(lb)!==JSON.stringify(rb))parts.push('品牌名你已改');
+  return parts.length?('合并: '+parts.join('，')):'无差异（远程未变，直接发布）';
+}
+
 // ===== 生成 & 部署 =====
 async function generateSite(deploy){
   if(deploy){
@@ -1166,18 +1237,38 @@ async function generateSite(deploy){
     deployBranch=envLocked.branch||deployBranch;
     const targetSite=envLocked.siteUrl||'';
     const isProd=currentEnv==='production';
-    // 4.4 部署前 diff：拉取远程 config.live.js 对比
+    // 4.4 部署前合并：拉远程 config.live.js，本地改动叠在远程之上（防多人覆盖）
     var diffMsg='（首次部署或无法获取远程）';
+    var remoteConfig=null;
     if(targetSite){
       try{
         var rr=await fetch(targetSite+'config.live.js?t='+Date.now(),{cache:'no-store'});
-        if(rr.ok){var rt=await rr.text();var rm=rt.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(rm){
-          var rc=JSON.parse(rm[1]);var diffs=[];
-          if(JSON.stringify(rc.brand&&rc.brand.name)!==JSON.stringify(currentConfig&&currentConfig.brand&&currentConfig.brand.name))diffs.push('品牌变化');
-          if((rc.products||[]).length!==((currentConfig&&currentConfig.products)||[]).length)diffs.push('产品数:'+(rc.products||[]).length+'->'+((currentConfig&&currentConfig.products)||[]).length);
-          diffMsg=diffs.length?('差异: '+diffs.join('，')):'无配置差异';
-        }}
-      }catch(e){diffMsg='（远程拉取失败，跳过 diff）'}
+        if(rr.ok){var rt=await rr.text();var rm=rt.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(rm){remoteConfig=JSON.parse(rm[1]);}}
+      }catch(e){}
+    }
+    if(remoteConfig){
+      // 找出远程有、本地没有的产品（可能是有意删除，也可能是本地过期）
+      var lp=(currentConfig&&currentConfig.products)||[],rp=remoteConfig.products||[];
+      var ln={};lp.forEach(function(p){var n=_itemName(p);if(n)ln[n]=1;});
+      var remoteOnly=rp.filter(function(p){var n=_itemName(p);return n&&!ln[n];});
+      var deleteMode=false;
+      if(remoteOnly.length>0){
+        var rnames=remoteOnly.map(function(p){return _itemName(p);}).join(', ');
+        if(confirm('线上有 '+remoteOnly.length+' 个产品你本地没有（可能是别人部署的，也可能是你删除的）：\n  '+rnames+'\n\n点「确定」= 从线上删除这些产品\n点「取消」= 保留它们（默认，防误删）')){
+          deleteMode=true;
+        }
+      }
+      var mergedConfig=mergeConfigs(currentConfig,remoteConfig);
+      if(deleteMode){
+        // 删除模式：产品用本地清单（删除生效），其他字段仍合并
+        mergedConfig.products=JSON.parse(JSON.stringify(currentConfig.products||[]));
+      }
+      diffMsg=mergeSummary(currentConfig,remoteConfig)+(deleteMode?' | ⚠️ 将删除远程独有产品 '+remoteOnly.length+' 个':'');
+      if(JSON.stringify(mergedConfig)!==JSON.stringify(currentConfig)){
+        currentConfig=mergedConfig; // 部署合并后的配置；下方 saveConfig() 会持久化到 localStorage
+      }
+    }else{
+      diffMsg='（无法获取远程，按本地配置部署）';
     }
     // 4.5 PROD 显式确认门
     const brand=i18nGet(currentConfig?.brand?.name)||'未配置';
