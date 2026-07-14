@@ -390,7 +390,7 @@ function handleUpload(inp,targetId){
     compressImage(f,99999,0.95).then(function(blob){
       var form=new FormData();form.append('image',blob||f);
       var xhr=new XMLHttpRequest();
-      xhr.open('POST','https://api.imgbb.com/1/image?key='+imgbbKey);
+      xhr.open('POST','https://api.imgbb.com/1/upload?key='+imgbbKey);
       xhr.upload.addEventListener('progress',function(e){
         if(e.lengthComputable){
           var pct=Math.round(e.loaded/e.total*100);
@@ -557,7 +557,7 @@ function uploadBatchItem(item,callbackId){
     if(imgbbKey&&imgbbKey.trim()){
       var form=new FormData();form.append('image',useBlob);
       var xhr=new XMLHttpRequest();
-      xhr.open('POST','https://api.imgbb.com/1/image?key='+imgbbKey.trim());
+      xhr.open('POST','https://api.imgbb.com/1/upload?key='+imgbbKey.trim());
       xhr.upload.addEventListener('progress',function(e){
         if(e.lengthComputable){item.progress=Math.round(e.loaded/e.total*100);renderBatchPanel(callbackId);}
       });
@@ -566,12 +566,11 @@ function uploadBatchItem(item,callbackId){
           try{var d=JSON.parse(xhr.responseText);if(d&&d.data&&d.data.url){item.url=d.data.url;item.status='success';}else{item.status='error';item.error='格式错误';}}catch(e){item.status='error';item.error='解析失败';}
           batchUploadActive--;renderBatchPanel(callbackId);processBatchQueue(callbackId);
         }else if(xhr.status===400||xhr.status===403){
-          // ImgBB Key 无效，自动降级到 base64
-          console.warn('ImgBB 上传失败(HTTP '+xhr.status+')，自动降级到 base64 模式');
-          var r=new FileReader();
-          r.onload=function(){item.url=r.result;item.status='success';item.isBase64=true;batchUploadActive--;renderBatchPanel(callbackId);processBatchQueue(callbackId);};
-          r.onerror=function(){item.status='error';item.error='降级也失败了';batchUploadActive--;renderBatchPanel(callbackId);processBatchQueue(callbackId);};
-          r.readAsDataURL(useBlob);
+          // ImgBB 返回错误，显示具体原因，不静默降级
+          var errMsg='HTTP '+xhr.status;
+          try{var rd=JSON.parse(xhr.responseText);if(rd&&rd.error)errMsg=rd.error.message||rd.error;}catch(e2){}
+          item.status='error';item.error='ImgBB: '+errMsg;
+          batchUploadActive--;renderBatchPanel(callbackId);processBatchQueue(callbackId);
         }else{item.status='error';item.error='HTTP '+xhr.status;batchUploadActive--;renderBatchPanel(callbackId);processBatchQueue(callbackId);}
       });
       xhr.addEventListener('error',function(){item.status='error';item.error='网络错误';batchUploadActive--;renderBatchPanel(callbackId);processBatchQueue(callbackId);});
@@ -1288,6 +1287,13 @@ async function generateSite(deploy){
     const js=`window.SITE_CONFIG = ${JSON.stringify(currentConfig,null,2)};`;
     if(!deploy){const blob=new Blob([js],{type:'application/javascript'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='config.js';a.click();if(s)s.innerHTML='<span class="s-s">✅ config.js 已下载！</span><br><span style="color:#888">手动替换网站目录中的 config.js 文件即可。</span>';toast('✅ config.js 已下载','success');return}
     if(!deployRepo||!deployToken){if(s)s.innerHTML='<span class="s-e">❌ 请先配置 GitHub 仓库和 Token</span>';toast('❌ 请先配置部署信息','error');return}
+    // 部署前预检：config 文件大小
+    if(js.length>524288){
+      var sizeKB=(js.length/1024).toFixed(0);
+      var b64Count=(currentConfig.products||[]).filter(function(p){return p.image&&p.image.startsWith('data:image')}).length;
+      if(s)s.innerHTML='<span class="s-e">❌ 配置文件过大 ('+sizeKB+'KB > 512KB)，无法部署。<br>原因：'+b64Count+' 张图片为 base64 内联，请重新上传至 ImgBB CDN。</span>';
+      toast('❌ 配置文件过大，请检查图片是否走了 CDN','error');return;
+    }
     try{
       const repoMatch=deployRepo.match(/github\.com\/([^\/]+?)\/([^\/]+?)(?:\.git)?$/);
       if(!repoMatch){if(s)s.innerHTML='<span class="s-e">❌ 仓库 URL 格式错误</span>';toast('❌ 仓库URL格式错误','error');return}
