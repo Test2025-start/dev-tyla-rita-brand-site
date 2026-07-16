@@ -115,8 +115,8 @@
 
   // Mobile menu
   var navToggle = doc.getElementById('navToggle');
-  navToggle.addEventListener('click', function() { navToggle.classList.toggle('active'); navMobileEl.classList.toggle('active'); });
-  function closeMobileMenu() { navToggle.classList.remove('active'); navMobileEl.classList.remove('active'); }
+  navToggle.addEventListener('click', function() { navToggle.classList.toggle('active'); navMobileEl.classList.toggle('active'); navbar.classList.toggle('nav-menu-open'); });
+  function closeMobileMenu() { navToggle.classList.remove('active'); navMobileEl.classList.remove('active'); navbar.classList.remove('nav-menu-open'); }
 
   // Scroll
   var navbar = doc.getElementById('navbar');

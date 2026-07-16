@@ -8,18 +8,18 @@ window.SITE_CONFIG = {
   },
   "brand": {
     "name": {
-      "en": "LUXE Jewelry",
-      "zh": "LUXE 高级首饰"
+      "en": "RITA Jewelry",
+      "zh": "RITA 时尚首饰"
     },
     "slogan": {
-      "en": "Timeless Elegance, Crafted for You",
-      "zh": "永恒优雅，匠心为你而铸"
+      "en": "Modern Style, Unique Beauty",
+      "zh": "现代风格，独特之美"
     },
     "logo": "assets/images/logo.svg",
-    "primaryColor": "#C9A96E",
-    "secondaryColor": "#1a1a2e",
-    "bgColor": "#FFFFFF",
-    "accentBg": "#FAF8F5"
+    "primaryColor": "#E91E63",
+    "secondaryColor": "#282C34",
+    "bgColor": "#FDF5F5",
+    "accentBg": "#FFF0F5"
   },
   "navigation": [
     {
@@ -58,16 +58,16 @@ window.SITE_CONFIG = {
   "hero": {
     "image": "assets/images/hero.svg",
     "title": {
-      "en": "Where Elegance Meets Craft",
-      "zh": "当优雅遇见匠心"
+      "en": "Discover Your Unique Style",
+      "zh": "发现你的独特风格"
     },
     "subtitle": {
-      "en": "Discover our curated collection of fine jewelry — each piece a testament to timeless beauty",
-      "zh": "探索我们的精选高级首饰系列 — 每一件都是永恒之美的见证"
+      "en": "Explore our contemporary jewelry collection — designed for the modern woman who values individuality and style",
+      "zh": "探索我们的现代首饰系列 — 专为追求个性与时尚的现代女性设计"
     },
     "ctaText": {
-      "en": "Explore Collection",
-      "zh": "探索系列"
+      "en": "Shop Now",
+      "zh": "立即选购"
     },
     "ctaLink": "#products"
   },
@@ -334,12 +334,12 @@ window.SITE_CONFIG = {
   },
   "seo": {
     "title": {
-      "en": "LUXE Jewelry | Timeless Elegance & Fine Craft",
-      "zh": "LUXE 高级首饰 | 永恒优雅与精湛工艺"
+      "en": "RITA Jewelry | Modern Style & Unique Beauty",
+      "zh": "RITA 时尚首饰 | 现代风格与独特之美"
     },
     "description": {
-      "en": "Discover LUXE Jewelry — handcrafted fine jewelry featuring pearls, diamonds, sapphires & more. Ethically sourced, designed for modern elegance.",
-      "zh": "探索LUXE高级首饰——手工打造的精品首饰，涵盖珍珠、钻石、蓝宝石等。道德采购，为现代优雅而设计。"
+      "en": "Discover RITA Jewelry — contemporary fashion jewelry designed for modern women. Stylish, affordable, and uniquely beautiful.",
+      "zh": "探索RITA时尚首饰——专为现代女性设计的时尚配饰。潮流、实惠、独特美丽。"
     },
     "keywords": "jewelry, luxury jewelry, pearl necklace, diamond ring, gold bracelet, sapphire pendant, ruby earrings, fine jewelry, handcrafted jewelry",
     "ogImage": "",
