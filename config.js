@@ -541,5 +541,5 @@ window.SITE_CONFIG = {
     "gaTrackingId": "",
     "showFloatingWhatsApp": true
   },
-  "_version": "20260716120442"
+  "_version": "20260716120547"
 };
