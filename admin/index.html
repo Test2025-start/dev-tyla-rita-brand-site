@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta name="robots" content="noindex">
-<meta name="deploy-ver" content="v20260810162540">
 <title>管理后台 — Site Admin</title>
 <style>
 /* ========== 基础变量 ========== */
@@ -638,38 +637,46 @@ function showBatchProductCreator(){
   container.scrollIntoView({behavior:'smooth'});
 }
 
+var batchCreating=false;
 function batchCreateProducts(){
+  if(batchCreating)return; // 防止重复点击
   var creator=$('batchProductCreator');
   if(!creator)return;
-  var items=creator.querySelectorAll('[style*="border:1px solid"]');
+  var items=creator.querySelectorAll('.bpc-item');
+  if(items.length===0)items=creator.querySelectorAll('[style*="border:1px solid"]');
   var count=0;
-  items.forEach(function(item){
-    var nameEn=item.querySelector('.bpc-name-en').value.trim();
-    var nameZh=item.querySelector('.bpc-name-zh').value.trim();
-    var cat=item.querySelector('.bpc-cat').value;
-    var price=item.querySelector('.bpc-price').value.trim();
-    var image=item.querySelector('.bpc-image').value;
-    if(!nameEn&&!nameZh)return; // 跳过没有名称的
-    var p={
-      name:{},
-      category:{},
-      price:price,
-      image:image,
-      description:{}
-    };
-    if(nameEn)p.name.en=nameEn;
-    if(nameZh)p.name.zh=nameZh;
-    if(cat){p.category.en=cat;p.category.zh=cat;}
-    (currentConfig.products=currentConfig.products||[]).push(p);
-    count++;
-  });
-  if(count>0){
-    saveConfig();
-    renderProducts();
-    toast('✅ 成功添加 '+count+' 个产品','success');
-    creator.remove();
-  }else{
-    toast('❌ 请至少填写一个产品的名称','error');
+  batchCreating=true;
+  try{
+    items.forEach(function(item){
+      var nameEn=item.querySelector('.bpc-name-en').value.trim();
+      var nameZh=item.querySelector('.bpc-name-zh').value.trim();
+      var cat=item.querySelector('.bpc-cat').value;
+      var price=item.querySelector('.bpc-price').value.trim();
+      var image=item.querySelector('.bpc-image').value;
+      if(!nameEn&&!nameZh)return;
+      var p={
+        name:{},
+        category:{},
+        price:price,
+        image:image,
+        description:{}
+      };
+      if(nameEn)p.name.en=nameEn;
+      if(nameZh)p.name.zh=nameZh;
+      if(cat){p.category.en=cat;p.category.zh=cat;}
+      (currentConfig.products=currentConfig.products||[]).push(p);
+      count++;
+    });
+    if(count>0){
+      saveConfig();
+      renderProducts();
+      toast('✅ 成功添加 '+count+' 个产品','success');
+      creator.remove();
+    }else{
+      toast('❌ 请至少填写一个产品的名称','error');
+    }
+  }finally{
+    batchCreating=false;
   }
 }
 
@@ -742,6 +749,7 @@ async function doLogin(){
       $('sUser').textContent=u;$('sRole').textContent=users[u].role;
       $('tbUser').textContent=u;
       if(users[u].role==='admin'){$('adminSec').style.display='block';$('navUsers').style.display='block'}
+      await initConfigFromRemote();
       initEnvUI();loadConfig();initNav();showPage('dashboard');renderDeployLog();
     }else{
       showAlert('loginAlert','用户名或密码错误','e');
@@ -776,6 +784,8 @@ async function loadConfig(){
   var cfgUrl='../config.js?t='+Date.now();
   var loaded=false;
   try{var r=await fetch(cfgUrl);if(r.ok){var t=await r.text();var m=t.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(m){siteConfig=JSON.parse(m[1]);loaded=true}}}catch(e){}
+  // 容错：非贪婪正则可能在 dataURL 的 ';' 处提前截断，回退到贪婪匹配整段
+  if(!loaded){try{var r2=await fetch(cfgUrl);if(r2.ok){var t2=await r2.text();var m2=t2.match(/SITE_CONFIG\s*=\s*([\s\S]*)\s*;\s*$/);if(m2){siteConfig=JSON.parse(m2[1]);loaded=true}}}catch(e2){}}
   if(!loaded)siteConfig=JSON.parse(JSON.stringify(DEFAULT_CONFIG));
   cachedConfig=JSON.parse(JSON.stringify(siteConfig));
   currentConfig=JSON.parse(JSON.stringify(siteConfig||DEFAULT_CONFIG));
@@ -785,6 +795,35 @@ async function loadConfig(){
   deployBranch=envLocked.branch||'gh-pages';
   const du=loadLocal('deploy');if(du){deployToken=du.token||'';imgbbKey=du.imgbbKey||''}
   currentUsers=loadLocal('users')||DEFAULT_USERS;
+}
+
+// ===== 首次访问：从线上拉取配置初始化 =====
+async function initConfigFromRemote(){
+  // 如果 localStorage 已有配置，跳过
+  if(loadLocal('config'))return true;
+
+  const envLocked=envConfig[currentEnv]||{};
+  const targetSite=envLocked.siteUrl||'';
+  if(!targetSite)return false;
+
+  try{
+    var rr=await fetch(targetSite+'config.live.js?t='+Date.now(),{cache:'no-store'});
+    if(rr.ok){
+      var rt=await rr.text();
+      var rm=rt.match(/SITE_CONFIG\s*=\s*([\s\S]*)\s*;\s*$/);
+      if(rm){
+        var remoteConfig=JSON.parse(rm[1]);
+        saveLocal('config',remoteConfig);
+        currentConfig=remoteConfig;
+        cachedConfig=JSON.parse(JSON.stringify(remoteConfig));
+        toast('✅ 已从线上同步配置','success');
+        return true;
+      }
+    }
+  }catch(e){
+    console.warn('从线上拉取配置失败:',e);
+  }
+  return false;
 }
 
 // =================== 配置完成度计算 ===================
@@ -1142,20 +1181,100 @@ function renderDeploy(){
       <div class="fr"><div class="fg"><label>分支（已由环境锁定）</label><input class="fi" id="depo_branch" value="${esc(deployBranch)}" readonly style="background:#f5f5f5;color:#888"></div><div class="fg"><label>GitHub Token</label><input type="password" class="fi" id="depo_token" value="${esc(deployToken)}" placeholder="github_pat_xxxxxxxx"></div></div>
       <p style="font-size:12px;color:#888;margin-bottom:12px">获取 Token: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens (需 Contents 读写权限)</p>
       <div class="fg"><label>🖼️ ImgBB API Key（可选，上传高清图片用）</label><input type="password" class="fi" id="depo_imgbb" value="${esc(imgbbKey||'')}" placeholder="点击查看如何获取免费Key">
-      <p style="font-size:12px;color:#888;margin-top:4px"><a href="javascript:void(0)" onclick="alert('ImgBB免费图床申请方法：\n1. 打开 https://api.imgbb.com/\n2. 点击 \"Sign in\" 或 \"Registration\"\n3. 注册/登录后访问 https://api.imgbb.com/1/image?key=\n4. 或直接访问 https://imgbb.com/upload\n5. 登录后在 https://api.imgbb.com/ 获取您的API Key\n\n免费额度：10GB存储空间，单张最大32MB，支持JPG/PNG/GIF/WebP等格式。\n\n如果没有ImgBB Key，系统会改用本地base64存储（适合小图片）')">📖 如何获取免费 ImgBB Key？</a></p></div>
+      <p style="font-size:12px;color:#888;margin-top:4px"><a href="javascript:void(0)" onclick="alert('ImgBB免费图床申请方法：\n1. 打开 https://api.imgbb.com/\n2. 点击 \"Sign in\" 或 \"Registration\"\n3. 注册/登录后访问 https://api.imgbb.com/1/upload\n4. 或直接访问 https://imgbb.com/upload\n5. 登录后在 https://api.imgbb.com/ 获取您的API Key\n\n免费额度：10GB存储空间，单张最大32MB，支持JPG/PNG/GIF/WebP等格式。\n\n如果没有ImgBB Key，系统会改用本地base64存储（适合小图片）')">📖 如何获取免费 ImgBB Key？</a></p></div>
       <button type="submit" class="btn btn-p btn-sm">💾 保存部署设置</button>
     </div></form>
     <div class="card"><div class="card-title">⚡ 部署操作</div>
       <p style="font-size:13px;color:#888;margin-bottom:12px">所有配置保存后，点击下方按钮。</p>
       <div class="depoly-actions">
         <button class="btn btn-p" onclick="generateSite(false)">📁 仅下载 config.js</button>
-        <button class="btn btn-s" onclick="generateSite(true)">🚀 部署到${env.name}环境</button>
+        <button class="btn btn-o" onclick="quickDeploy()">⚡ 快速更新配置（秒级生效）</button>
+        <button class="btn btn-s" onclick="generateSite(true)">🚀 完整部署（含代码更新）</button>
       </div>
+      <p style="font-size:11px;color:#999;margin-top:8px">💡 快速更新仅修改配置文件，适合日常内容更新；完整部署会重新生成整个网站，适合模板/样式变更。</p>
       <div class="status" id="genStatus"></div>
     </div>`;
 }
 
 function saveDeploy(e){e.preventDefault();deployRepo=$('depo_repo').value;deployBranch=$('depo_branch').value||'gh-pages';deployToken=$('depo_token').value;imgbbKey=$('depo_imgbb').value.trim();saveLocal('deploy',{repo:deployRepo,branch:deployBranch,token:deployToken,imgbbKey:imgbbKey});toast('✅ 部署设置已保存','success');}
+
+async function quickDeploy(){
+  const s=$('genStatus');
+  if(!deployRepo||!deployToken){if(s)s.innerHTML='<span class="s-e">❌ 请先配置 GitHub 仓库和 Token</span>';toast('❌ 请先配置部署信息','error');return}
+  
+  const isProd=currentEnv==='production';
+  
+  if(s)s.innerHTML='<span style="color:#888">⏳ 正在准备配置...</span>';
+  
+  // 1. 拉取远程配置并合并（防多人覆盖）
+  var prepResult;
+  try{
+    prepResult=await prepareDeployConfig();
+  }catch(e){
+    if(s)s.innerHTML='<span class="s-e">❌ 配置准备失败: '+e.message+'</span>';
+    toast('❌ 配置准备失败','error');return;
+  }
+  
+  // 2. PROD 确认门
+  const brand=i18nGet(currentConfig?.brand?.name)||'未配置';
+  const products=(currentConfig?.products||[]).length;
+  const envLabel=isProd?'⚠️ 生产环境（PROD）':'灰度环境';
+  const msg=`快速更新到${envLabel}\n\n目标仓库: ${deployRepo}\n分支: ${deployBranch}\n品牌: ${brand}\n产品数: ${products} 个\n配置 diff: ${prepResult.diffMsg}\n\n${isProd?'⚠️ 这是生产环境，确认快速更新配置吗？':'确认快速更新配置吗？'}`;
+  if(!confirm(msg))return;
+  
+  if(s)s.innerHTML='<span style="color:#888">⏳ 正在生成配置文件...</span>';
+  
+  try{
+    saveConfig();
+    
+    // 3. 生成 config.live.js 内容
+    var now=new Date();
+    var ver='v'+now.getFullYear()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+now.getHours().toString().padStart(2,'0')+now.getMinutes().toString().padStart(2,'0')+now.getSeconds().toString().padStart(2,'0');
+    var cfgFile='config.live.js';
+    const js=`window.SITE_CONFIG = ${JSON.stringify(currentConfig,null,2)};`;
+    const jsWithVer=`/* ${ver} */\n`+js;
+    
+    // 4. 大小预检（512KB）
+    if(js.length>524288){
+      var sizeKB=(js.length/1024).toFixed(0);
+      var b64Count=(currentConfig.products||[]).filter(function(p){return p.image&&p.image.startsWith('data:image')}).length;
+      if(s)s.innerHTML='<span class="s-e">❌ 配置文件过大 ('+sizeKB+'KB > 512KB)，无法部署。<br>原因：'+b64Count+' 张图片为 base64 内联，请重新上传至 ImgBB CDN。</span>';
+      toast('❌ 配置文件过大，请检查图片是否走了 CDN','error');return;
+    }
+    
+    // 5. 直接调用 GitHub Content API 上传
+    const repoMatch=deployRepo.match(/github\.com\/([^\/]+?)\/([^\/]+?)(?:\.git)?$/);
+    if(!repoMatch){if(s)s.innerHTML='<span class="s-e">❌ 仓库 URL 格式错误</span>';toast('❌ 仓库URL格式错误','error');return}
+    const owner=repoMatch[1],repo=repoMatch[2];
+    const siteUrl='https://'+owner+'.github.io/'+repo+'/';
+    var cfgSize=(js.length/1024).toFixed(0);
+    
+    if(s)s.innerHTML='<span style="color:#888">⏳ 正在上传配置文件 ('+cfgSize+'KB)...</span>';
+    await uploadFile(owner,repo,deployBranch,cfgFile,jsWithVer,'Quick deploy: config update ['+ver+']',120);
+    
+    // 6. 部署后校验
+    var verifyMsg='';
+    try{
+      await new Promise(r=>setTimeout(r,2000));
+      var vr=await fetch(siteUrl+'config.live.js?t='+Date.now(),{cache:'no-store'});
+      if(vr.ok){var vt=await vr.text();var vm=vt.match(/SITE_CONFIG\s*=\s*([\s\S]*)\s*;\s*$/);if(vm){
+        var vc=JSON.parse(vm[1]);
+        if(JSON.stringify(vc.brand&&vc.brand.name)!==JSON.stringify(currentConfig&&currentConfig.brand&&currentConfig.brand.name)){
+          verifyMsg='⚠️ 线上品牌字段暂不符（可能 CDN 缓存，几分钟后刷新）';
+        }
+      }}
+    }catch(e){verifyMsg='⚠️ 线上校验拉取失败（可能 CDN 延迟）'}
+    
+    // 7. 成功
+    var forceUrl=siteUrl+'?t='+Date.now();
+    if(s)s.innerHTML='<span class="s-s">✅ 配置更新成功！</span><br>🌐 <a href="'+forceUrl+'" target="_blank">🔄 立即查看</a><br><span style="color:#888">⚡ 配置已秒级生效</span>'+(verifyMsg?'<br><span style="color:#E67E22">'+verifyMsg+'</span>':'');
+    toast('⚡ 配置更新成功！','success');
+    clearDirty();
+  }catch(e){
+    if(s)s.innerHTML='<span class="s-e">❌ 更新失败: '+e.message+'</span>';
+    toast('❌ 更新失败: '+e.message,'error');
+  }
+}
 
 // ===== 配置合并（多人协作防覆盖，对标 shared/config_merge.py）=====
 function _isImageField(key,value){
@@ -1228,6 +1347,44 @@ function mergeSummary(localConfig,remoteConfig){
   return parts.length?('合并: '+parts.join('，')):'无差异（远程未变，直接发布）';
 }
 
+// ===== 部署配置准备（quickDeploy 和 generateSite 共用）=====
+async function prepareDeployConfig(){
+  const envLocked=envConfig[currentEnv]||{};
+  const targetSite=envLocked.siteUrl||'';
+  var diffMsg='（首次部署或无法获取远程）';
+  var remoteConfig=null;
+  if(targetSite){
+    try{
+      var rr=await fetch(targetSite+'config.live.js?t='+Date.now(),{cache:'no-store'});
+      if(rr.ok){var rt=await rr.text();var rm=rt.match(/SITE_CONFIG\s*=\s*([\s\S]*)\s*;\s*$/);if(rm){remoteConfig=JSON.parse(rm[1]);}}
+    }catch(e){}
+  }
+  var deleteMode=false;
+  if(remoteConfig){
+    var lp=(currentConfig&&currentConfig.products)||[],rp=remoteConfig.products||[];
+    var ln={};lp.forEach(function(p){var n=_itemName(p);if(n)ln[n]=1;});
+    var remoteOnly=rp.filter(function(p){var n=_itemName(p);return n&&!ln[n];});
+    if(remoteOnly.length>0){
+      var rnames=remoteOnly.map(function(p){return _itemName(p);}).join(', ');
+      if(confirm('线上有 '+remoteOnly.length+' 个产品你本地没有（可能是别人部署的，也可能是你删除的）：\n  '+rnames+'\n\n点「确定」= 从线上删除这些产品\n点「取消」= 保留它们（默认，防误删）')){
+        deleteMode=true;
+      }
+    }
+    var mergedConfig=mergeConfigs(currentConfig,remoteConfig);
+    if(deleteMode){
+      mergedConfig.products=JSON.parse(JSON.stringify(currentConfig.products||[]));
+    }
+    diffMsg=mergeSummary(currentConfig,remoteConfig)+(deleteMode?' | ⚠️ 将删除远程独有产品 '+remoteOnly.length+' 个':'');
+    if(JSON.stringify(mergedConfig)!==JSON.stringify(currentConfig)){
+      currentConfig=mergedConfig;
+      saveConfig();
+    }
+  }else{
+    diffMsg='（无法获取远程，按本地配置部署）';
+  }
+  return {mergedConfig:currentConfig,diffMsg:diffMsg};
+}
+
 // ===== 生成 & 部署 =====
 async function generateSite(deploy){
   if(deploy){
@@ -1237,39 +1394,9 @@ async function generateSite(deploy){
     deployBranch=envLocked.branch||deployBranch;
     const targetSite=envLocked.siteUrl||'';
     const isProd=currentEnv==='production';
-    // 4.4 部署前合并：拉远程 config.live.js，本地改动叠在远程之上（防多人覆盖）
-    var diffMsg='（首次部署或无法获取远程）';
-    var remoteConfig=null;
-    if(targetSite){
-      try{
-        var rr=await fetch(targetSite+'config.live.js?t='+Date.now(),{cache:'no-store'});
-        if(rr.ok){var rt=await rr.text();var rm=rt.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(rm){remoteConfig=JSON.parse(rm[1]);}}
-      }catch(e){}
-    }
-    if(remoteConfig){
-      // 找出远程有、本地没有的产品（可能是有意删除，也可能是本地过期）
-      var lp=(currentConfig&&currentConfig.products)||[],rp=remoteConfig.products||[];
-      var ln={};lp.forEach(function(p){var n=_itemName(p);if(n)ln[n]=1;});
-      var remoteOnly=rp.filter(function(p){var n=_itemName(p);return n&&!ln[n];});
-      var deleteMode=false;
-      if(remoteOnly.length>0){
-        var rnames=remoteOnly.map(function(p){return _itemName(p);}).join(', ');
-        if(confirm('线上有 '+remoteOnly.length+' 个产品你本地没有（可能是别人部署的，也可能是你删除的）：\n  '+rnames+'\n\n点「确定」= 从线上删除这些产品\n点「取消」= 保留它们（默认，防误删）')){
-          deleteMode=true;
-        }
-      }
-      var mergedConfig=mergeConfigs(currentConfig,remoteConfig);
-      if(deleteMode){
-        // 删除模式：产品用本地清单（删除生效），其他字段仍合并
-        mergedConfig.products=JSON.parse(JSON.stringify(currentConfig.products||[]));
-      }
-      diffMsg=mergeSummary(currentConfig,remoteConfig)+(deleteMode?' | ⚠️ 将删除远程独有产品 '+remoteOnly.length+' 个':'');
-      if(JSON.stringify(mergedConfig)!==JSON.stringify(currentConfig)){
-        currentConfig=mergedConfig; // 部署合并后的配置；下方 saveConfig() 会持久化到 localStorage
-      }
-    }else{
-      diffMsg='（无法获取远程，按本地配置部署）';
-    }
+    // 4.4 部署前合并（使用公共函数）
+    var prepResult=await prepareDeployConfig();
+    var diffMsg=prepResult.diffMsg;
     // 4.5 PROD 显式确认门
     const brand=i18nGet(currentConfig?.brand?.name)||'未配置';
     const products=(currentConfig?.products||[]).length;
@@ -1324,7 +1451,7 @@ async function generateSite(deploy){
       if(siteUrl){
         try{await new Promise(r=>setTimeout(r,2000));
           var vr=await fetch(siteUrl+'config.live.js?t='+Date.now(),{cache:'no-store'});
-          if(vr.ok){var vt=await vr.text();var vm=vt.match(/SITE_CONFIG\s*=\s*([\s\S]*?);/);if(vm){
+          if(vr.ok){var vt=await vr.text();var vm=vt.match(/SITE_CONFIG\s*=\s*([\s\S]*)\s*;\s*$/);if(vm){
             var vc=JSON.parse(vm[1]);
             if(JSON.stringify(vc.brand&&vc.brand.name)!==JSON.stringify(currentConfig&&currentConfig.brand&&currentConfig.brand.name)){
               verifyMsg='⚠️ 线上品牌字段暂不符（可能 CDN 缓存，几分钟后刷新）';
