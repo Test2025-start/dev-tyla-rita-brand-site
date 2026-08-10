@@ -1,4 +1,4 @@
-/* v20260810162147 */
+/* v20260810162540 */
 window.SITE_CONFIG = {
   "i18n": {
     "defaultLanguage": "en",
@@ -228,6 +228,19 @@ window.SITE_CONFIG = {
         "en": "Brilliant Austrian crystals in fine gold-plated setting. Everyday luxury.",
         "zh": "璀璨奥地利水晶镶嵌精致镀金底座，日常奢华之选。"
       }
+    },
+    {
+      "name": {
+        "en": "Incremental Test Product",
+        "zh": "增量测试产品"
+      },
+      "category": {
+        "en": "Test",
+        "zh": "测试"
+      },
+      "price": "$9.99",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWJiYGD4DwAAAP//cGajQwAAAAZJREFUAwABDgEC81VxbAAAAABJRU5ErkJggg==",
+      "description": {}
     }
   ],
   "about": {
